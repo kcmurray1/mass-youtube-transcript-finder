@@ -64,6 +64,9 @@ def get_transcript(driver):
 
 # Find a user_phrase in a given transcript
 def find_phrase_in_transcript(transcript, user_phrase, author, url, debug=False):
+    if not transcript:
+        with open("error_log.txt", "a") as err:
+            err.write(f"{url}\n")
     matches = []
     # Find user_phrase in transcript
     for line in transcript:
@@ -91,7 +94,8 @@ def find_videos(driver):
     # NOTE: playlist videos use a different ID than homepage video elements
     try:
          # Render all of the videos 
-        render_videos(int(driver.find_element(By.ID, "videos-count").text.split()[0]))
+        #render_videos(int(driver.find_element(By.ID, "videos-count").text.split()[0]))
+        render_videos(5, True)
         videos = driver.find_elements(By.ID, "video-title-link")
         print(len(videos))
         if videos:
@@ -112,10 +116,16 @@ def find_videos(driver):
         return playlist_videos
     
 # scroll to the bottom of a webpage for specified amount of times
-def render_videos(video_count):
+def render_videos(video_count, debug=None):
     print("rendering videos...")
     # Youtube initially renders 30 videos
     # performing bottom scroll renders an additional 30 videos(if present)
+    if debug:
+        print(f"scrolling {video_count} times")
+        for _ in range(video_count):
+            pyautogui.hotkey("ctrl", "end")
+            time.sleep(3)
+        return
     if video_count:
         num_bottom_scroll = (video_count - 30) // 30
         print(f"scrolling {num_bottom_scroll} times")
@@ -154,8 +164,6 @@ def channel_search(start_url, user_author_name=None, user_phrase=None, partition
         #    continue
         if valid_author(video.get_title(), user_author_name): 
             driver.get(video.get_url())
-                # Resize to prevent element rendering issues
-       
             # Wait for the new video to load
             time.sleep(NEXTVIDEOLOADTIME)
             #print("moving to next video")
@@ -164,28 +172,70 @@ def channel_search(start_url, user_author_name=None, user_phrase=None, partition
     # Close the page
     driver.close()
 
-    
+def worker_job(start_url, user_author_name, user_phrase, videos, id):
+    # open chromepage at starting url
+    driver = webdriver.Chrome()
+    driver.get(start_url)
+    # Resize to prevent element rendering issues
+    driver.set_window_size(1200, 1000)
+    time.sleep(PAGELOADTIME)
+    # process given videos
+    num_videos = len(videos)
+    for index, video in enumerate(videos):
+        print(f"{id} processing video ({index + 1}/{num_videos})")
+        if valid_author(video.get_title(), user_author_name): 
+            driver.get(video.get_url())   
+            # Wait for the new video to load
+            time.sleep(NEXTVIDEOLOADTIME)
+            #print("moving to next video")
+            # Attempt to find a transcript and see if it contains the user's phrase
+            find_phrase_in_transcript(get_transcript(driver), user_phrase, user_author_name, video.get_url())
+    # Close the page
+    driver.close()
 
 def channel_search_multi_thread(threaded_url):
-    # user_author_name = input("Channel name: ")
-    # user_phrase = input("Enter a phrase: ")
+    user_author_name = input("Channel name: ")
+    user_phrase = input("Enter a phrase: ")
+    # open chromepage at starting url
+    driver = webdriver.Chrome()
+    driver.get(threaded_url)
+    # Resize to prevent element rendering issues
+    driver.set_window_size(1200, 1000)
+    time.sleep(PAGELOADTIME)
+    videos = find_videos(driver)
+    # stop main window
+    driver.close()
+    print(f"total videos: {len(videos)}")
+    # split into 4ths
+    # mid = len(videos) // 2
+    # quart = mid // 2
+    # split_videos = []
+    # split_videos.append(videos[:quart])
+    # split_videos.append(videos[quart: 2 * quart])
+    # split_videos.append(videos[2 * quart: 3 * quart])
+    # split_videos.append(videos[3 * quart: 4 * quart + 1])
+
+    #NOTE: using at minimum 6 workers
+    split_len = len(videos) // 6
+    split_videos = list(split(videos, split_len))
+    print(len(split_videos))
+    # assign work
+    id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
+    workers = []
+    for i, videos_partition in enumerate(split_videos):
+        workers.append(threading.Thread(target=worker_job, args=(threaded_url, user_author_name, user_phrase, videos_partition, id[i])))
+
+    for worker in workers:
+        worker.start()
+    
+    for worker in workers:
+        worker.join()
+
+
+
     # find all videos
-    make_workers(4, threaded_url)
-    # split into fourths
-    # t1 = threading.Thread(target=channel_search, args=(threaded_url, user_author_name, user_phrase, "first"))
-    # t2 = threading.Thread(target=channel_search, args=(threaded_url, user_author_name, user_phrase, "second"))
-    # t3 = threading.Thread(target=channel_search, args=(threaded_url, user_author_name, user_phrase, "third"))
-    # t4 = threading.Thread(target=channel_search, args=(threaded_url, user_author_name, user_phrase, "fourth"))
-
-    # t1.start()
-    # t2.start()
-    # t3.start()
-    # t4.start()
-
-    # t1.join()
-    # t2.join()
-    # t3.join()
-    # t4.join()
+    #make_workers(4, threaded_url)
+   
 
 def make_workers(num_workers, threaded_url):
     id = ["first", "second", "third", "fourth"]
@@ -204,6 +254,10 @@ def make_workers(num_workers, threaded_url):
     # Join workers
     for worker in workers:
         worker.join()
+# courtesy of programiz: https://www.programiz.com/python-programming/examples/list-chunks
+def split(list_a, chunk_size):
+  for i in range(0, len(list_a), chunk_size):
+    yield list_a[i:i + chunk_size]
 
 
 if __name__ == "__main__":
@@ -217,6 +271,11 @@ if __name__ == "__main__":
     url_not_youtube = 'https://www.google.com/'
     who = 'https://www.youtube.com/@MoriCalliope/streams'
     url_homepage_27 = 'https://www.youtube.com/@jdh/videos'
-    channel_search_multi_thread('https://www.youtube.com/@jdh/videos')
+    channel_search_multi_thread(url_test_homepage_127)
 
-    #channel_search(url_homepage_27)
+    #channel_search(url_test_homepage_127)
+    #test_arr = [x for x in range(12)]
+    # split_len = len(test_arr) // 6
+    # a = list(split(test_arr, split_len))
+    # print(a)
+    #print(len(list(split(test_arr, split_len))))
