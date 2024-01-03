@@ -9,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 from selenium.common.exceptions import ElementClickInterceptedException
 from yt_video import Yt_Video
 import threading
+import queue
 # TODO(no priority)
 '''
 [x] automatically determine whether link is a homepage or contains a playlist
@@ -26,7 +27,7 @@ PAGELOADTIME = 5
 TRANSCRIPTLOADTIME = 5
 NEXTVIDEOLOADTIME = 5
 file_write_lock = threading.Lock()
-
+progress_lock = threading.Lock()
 # verify video is authored by specified author
 def valid_author(videoInfo, user_author):
     # invalid input
@@ -57,16 +58,18 @@ def get_transcript(driver):
     # No transcript element exists
     except NoSuchElementException:
         print("no transcript!")
+        return "No transcript"
     # FIXME: perform operation again
     except ElementClickInterceptedException:
         print("intercepted!")
-    return []
+        return "Intercepted"
+    #return []
 
 # Find a user_phrase in a given transcript
 def find_phrase_in_transcript(transcript, user_phrase, author, url, debug=False):
-    if not transcript:
+    if not isinstance(transcript, list):
         with open("error_log.txt", "a") as err:
-            err.write(f"{url}\n")
+            err.write(f"{transcript}: {url}\n")
     matches = []
     # Find user_phrase in transcript
     for line in transcript:
@@ -82,8 +85,8 @@ def find_phrase_in_transcript(transcript, user_phrase, author, url, debug=False)
         with file_write_lock:
             # write matches to file
             with open(f"matches_{author}.txt", "a") as f:
-                f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n")
-                f.writelines(f"{line}\n" for line in matches)
+                f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
+                #f.writelines(f"{line}\n" for line in matches)
     
 
 # # Create Yt_Video objects based on video elements scraped on page
@@ -94,8 +97,8 @@ def find_videos(driver):
     # NOTE: playlist videos use a different ID than homepage video elements
     try:
          # Render all of the videos 
-        #render_videos(int(driver.find_element(By.ID, "videos-count").text.split()[0]))
-        render_videos(5, True)
+        render_videos(int(driver.find_element(By.ID, "videos-count").text.split()[0]))
+        #render_videos(5, True)
         videos = driver.find_elements(By.ID, "video-title-link")
         print(len(videos))
         if videos:
@@ -193,6 +196,34 @@ def worker_job(start_url, user_author_name, user_phrase, videos, id):
     # Close the page
     driver.close()
 
+# Workers receive work via a Queue
+def dispatch_worker(start_url, user_author_name, user_phrase, video_queue, id):
+    # open chromepage at starting url
+    driver = webdriver.Chrome()
+    driver.get(start_url)
+    # Resize to prevent element rendering issues
+    driver.set_window_size(1200, 1000)
+    time.sleep(PAGELOADTIME)
+
+    # Get a video to process from the queue
+    while True:
+        try:
+            # Try to get a video from the queue
+            # raises queue.Empty if queue is empty
+            video_to_process = video_queue.get_nowait()
+            # validate video author
+            if valid_author(video_to_process.get_title(), user_author_name): 
+                driver.get(video_to_process.get_url())   
+                # Wait for the new video to load
+                time.sleep(NEXTVIDEOLOADTIME)
+                # Attempt to find a transcript and see if it contains the user's phrase
+                find_phrase_in_transcript(get_transcript(driver), user_phrase, user_author_name, video_to_process.get_url())
+            with progress_lock:
+                print(f"Queue size: {video_queue.qsize()}")
+        except queue.Empty:
+            break
+    print(f"{id} is DONE!")
+    
 def channel_search_multi_thread(threaded_url):
     user_author_name = input("Channel name: ")
     user_phrase = input("Enter a phrase: ")
@@ -202,18 +233,20 @@ def channel_search_multi_thread(threaded_url):
     # Resize to prevent element rendering issues
     driver.set_window_size(1200, 1000)
     time.sleep(PAGELOADTIME)
+    # get videos and convert into a queue
     videos = find_videos(driver)
+
+    # START A DIFFERENT POSITION
+    #videos = videos[127:]
     # stop main window
     driver.close()
     print(f"total videos: {len(videos)}")
-    # split into 4ths
-    # mid = len(videos) // 2
-    # quart = mid // 2
-    # split_videos = []
-    # split_videos.append(videos[:quart])
-    # split_videos.append(videos[quart: 2 * quart])
-    # split_videos.append(videos[2 * quart: 3 * quart])
-    # split_videos.append(videos[3 * quart: 4 * quart + 1])
+    
+    # queue.Queue() is thread-safe
+    video_queue = queue.Queue()
+    for video in videos:
+        video_queue.put(video)
+    
 
     #NOTE: using at minimum 6 workers
     split_len = len(videos) // 6
@@ -223,7 +256,8 @@ def channel_search_multi_thread(threaded_url):
     id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
     workers = []
     for i, videos_partition in enumerate(split_videos):
-        workers.append(threading.Thread(target=worker_job, args=(threaded_url, user_author_name, user_phrase, videos_partition, id[i])))
+        #workers.append(threading.Thread(target=worker_job, args=(threaded_url, user_author_name, user_phrase, videos_partition, id[i])))
+        workers.append(threading.Thread(target=dispatch_worker, args=(threaded_url, user_author_name, user_phrase, video_queue, id[i])))
 
     for worker in workers:
         worker.start()
@@ -259,7 +293,6 @@ def split(list_a, chunk_size):
   for i in range(0, len(list_a), chunk_size):
     yield list_a[i:i + chunk_size]
 
-
 if __name__ == "__main__":
     url = 'https://www.youtube.com/watch?v=MC7qoiJ5uPc'
     url_long_video = 'https://www.youtube.com/watch?v=SvwjrmKmggs'
@@ -271,8 +304,11 @@ if __name__ == "__main__":
     url_not_youtube = 'https://www.google.com/'
     who = 'https://www.youtube.com/@MoriCalliope/streams'
     url_homepage_27 = 'https://www.youtube.com/@jdh/videos'
-    channel_search_multi_thread(url_test_homepage_127)
-
+    url_test_homepage_655 = 'https://www.youtube.com/@Rosemi_Lovelock/streams'
+    start = time.perf_counter()
+    channel_search_multi_thread(url_homepage_27)
+    end = time.perf_counter()
+    print(f"Elapsed time {end -start:.6f} seconds")
     #channel_search(url_test_homepage_127)
     #test_arr = [x for x in range(12)]
     # split_len = len(test_arr) // 6
