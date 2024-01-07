@@ -14,15 +14,11 @@ import threading
 import queue
 # TODO(no priority)
 '''
-[x] automatically determine whether link is a homepage or contains a playlist
 [] make automated testing module
-[x] debuf_render_videos by finding total videos in channel
-[x] change find_phrase_in_transcript to send formatted output to file
 [] see if can include timestamp in link, such that clicking link sends to matched transcript line
     original             https://www.youtube.com/watch?v=u5LJ34hqPF0
     Original_in_playlist https://www.youtube.com/watch?v=Z2Cs0o72yZI&list=RDPT84G0xXDlI&index=2
     Shared link          https://youtu.be/Z2Cs0o72yZI?si=CsyEYxZqkiY2Pf32&t=76
-[x] multirthread
 []  
 '''
 PAGELOADTIME = 5
@@ -43,29 +39,6 @@ def valid_author(videoInfo, user_author):
     # Video published by desired author
     return True
 
-# return a transcript as a list of strings
-# return empty list if transcript could not be retrieved
-def get_transcript(driver):
-    #print("Retrieving transcript..")
-    try:
-        # find description expander to reveal transcript button
-        button = driver.find_element(By.XPATH, "//tp-yt-paper-button[@id='expand']")
-        button.click()
-        time.sleep(3)
-        # Check if transcript button exists
-        transcript_button = driver.find_element(By.XPATH, "//ytd-structured-description-content-renderer[@id='structured-description']//ytd-video-description-transcript-section-renderer[@class='style-scope ytd-structured-description-content-renderer']//div[@class='yt-spec-touch-feedback-shape__fill']")
-        transcript_button.click()
-        time.sleep(TRANSCRIPTLOADTIME)
-        # Return transcript as list of strings
-        return [x.get_dom_attribute("aria-label") for x in driver.find_elements(By.CSS_SELECTOR, "div[class='segment style-scope ytd-transcript-segment-renderer']")]
-    # No transcript element exists
-    except NoSuchElementException:
-        print("no transcript!")
-        return "No transcript"
-    # FIXME: perform operation again
-    except ElementClickInterceptedException:
-        print("intercepted!")
-        return "Intercepted"
 
 def get_transcript_matches(driver: webdriver, user_phrase: str):
      
@@ -102,6 +75,7 @@ def write_matches(matches: tuple, user_phrase: str, author: str, url: str):
             print(matches)
             with open("error_log.txt", "a") as err:
                 err.write(f"{matches}: {url}\n")
+        return
 
    
     # mutex to ensure only one thread writes to file at a time
@@ -111,31 +85,6 @@ def write_matches(matches: tuple, user_phrase: str, author: str, url: str):
             # Reduce write operations to files to hopefully improve performance
             # using .join() concats strings in O(n)
             f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
-
-# Find a user_phrase in a given transcript
-def find_phrase_in_transcript(transcript, user_phrase, author, url, debug=False):
-    if not isinstance(transcript, list):
-        with open("error_log.txt", "a") as err:
-            err.write(f"{transcript}: {url}\n")
-    matches = []
-    # Find user_phrase in transcript
-    for line in transcript:
-        if(user_phrase in line.lower()):
-            matches.append(line)
-    # Write to file with format
-    # Found <num_matches> containing <user_phrase> URL: <url>
-    # <match 1>\n
-    # <match 2>\n
-    # ...
-    if matches:
-        # mutex to ensure only one thread writes to file at a time
-        with file_write_lock:
-            # write matches to file
-            with open(f"matches_{author}.txt", "a") as f:
-                # Reduce write operations to files to hopefully improve performance
-                # using .join() concats strings in O(n)
-                f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
-    
 
 # # Create Yt_Video objects based on video elements scraped on page
 # # Playlist videos have different elements than videos displayed on a home channel page
@@ -209,7 +158,6 @@ def dispatch_worker(start_url, user_author_name, user_phrase, video_queue, id):
                 # Wait for the new video to load
                 #time.sleep(NEXTVIDEOLOADTIME)
                 # Attempt to find a transcript and see if it contains the user's phrase
-                #find_phrase_in_transcript(get_transcript(driver), user_phrase, user_author_name, video_to_process.get_url())
                 write_matches(get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
             with progress_lock:
                 print(f"Queue size: {video_queue.qsize()}")
@@ -235,7 +183,12 @@ def channel_search_multi_thread(threaded_url, num_workers=None, video_index=None
     # Should mostly be used for debugging purposes since
     # no checks are made
     if video_index:
-        videos = videos[video_index:]
+        location, index = video_index
+        if location == "end":
+            videos = videos[:index]
+        if location == "start":
+            videos = videos[index:]
+        #videos = videos[video_index:]
         #videos = videos[:video_index]
     # stop main window
     driver.close()
@@ -325,10 +278,8 @@ if __name__ == "__main__":
     who = 'https://www.youtube.com/@MoriCalliope/streams'
     url_homepage_27 = 'https://www.youtube.com/@jdh/videos'
     url_test_homepage_655 = 'https://www.youtube.com/@Rosemi_Lovelock/streams'
+    url_test_homepage_320 = 'https://www.youtube.com/@LeeandLieVODS/videos'
     start = time.perf_counter()
-    channel_search_multi_thread(url_homepage_27, 7)
-
-    # #extract_text(url)
+    channel_search_multi_thread(url_test_homepage_320, 7, ("start",100))
     end = time.perf_counter()
     print(f"Elapsed time {end -start:.6f} seconds")
-    #testing_javascript(url=url)
