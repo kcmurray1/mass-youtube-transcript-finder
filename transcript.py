@@ -23,7 +23,6 @@ import queue
 '''
 PAGELOADTIME = 5
 TRANSCRIPTLOADTIME = 5
-NEXTVIDEOLOADTIME = 5
 file_write_lock = threading.Lock()
 progress_lock = threading.Lock()
 err_write_lock = threading.Lock()
@@ -95,9 +94,7 @@ def find_videos(driver):
     try:
          # Render all of the videos 
         render_videos(int(driver.find_element(By.ID, "videos-count").text.split()[0]))
-        #render_videos(5, True)
-        videos = driver.find_elements(By.ID, "video-title-link")
-        print(len(videos))
+        videos = driver.find_elements(By.ID, "video-title-link") 
         if videos:
             # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
             # return found videos
@@ -140,11 +137,6 @@ def dispatch_worker(start_url, user_author_name, user_phrase, video_queue, id):
     driver_options.add_argument("window-size=1200,1000")
     driver_options.add_argument("mute-audio")
     driver = webdriver.Chrome(options=driver_options)
-    driver.get(start_url)
-    # Resize to prevent element rendering issues
-    #driver.set_window_size(1200, 1000)
-    # NOTE: maybe remove this by simply having the driver start at the first video chosen from queue
-    time.sleep(PAGELOADTIME)
 
     # Get a video to process from the queue
     while True:
@@ -155,8 +147,6 @@ def dispatch_worker(start_url, user_author_name, user_phrase, video_queue, id):
             # validate video author
             if valid_author(video_to_process.get_author(), user_author_name): 
                 driver.get(video_to_process.get_url())   
-                # Wait for the new video to load
-                #time.sleep(NEXTVIDEOLOADTIME)
                 # Attempt to find a transcript and see if it contains the user's phrase
                 write_matches(get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
             with progress_lock:
@@ -188,6 +178,8 @@ def channel_search_multi_thread(threaded_url, num_workers=None, video_index=None
             videos = videos[:index]
         if location == "start":
             videos = videos[index:]
+        if location =="debug":
+            videos = videos[100: 100 + index]
         #videos = videos[video_index:]
         #videos = videos[:video_index]
     # stop main window
@@ -238,33 +230,14 @@ def extract_text(url):
 
     driver.close()
 
-def testing_javascript(url):
-    driver_options = webdriver.ChromeOptions()
-    driver_options.add_argument("window-size=1200,1300")
-    #driver_options.add_argument("mute-audio")
-    driver = webdriver.Chrome(options=driver_options)
-    driver.get(url)
-    #time.sleep(PAGELOADTIME)
-    # Try to find transcript button using javascript
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//tp-yt-paper-button[@id='expand']"))          
-        )
-        driver.execute_script('document.querySelector("#expand").click()')
+def debug_test_loop(url, workers, args, num_loops):
+    total_time = 0
+    for _ in range(num_loops):
+        start_time = time.perf_counter
+        channel_search_multi_thread(url, workers, args)
 
-        driver.execute_script("document.querySelector(\"ytd-structured-description-content-renderer[id='structured-description'] ytd-video-description-transcript-section-renderer[class='style-scope ytd-structured-description-content-renderer'] div[class='yt-spec-touch-feedback-shape__fill']\").click()")
-        transcript_lines = WebDriverWait(driver, 20).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[class='segment style-scope ytd-transcript-segment-renderer']"))
-        )
-        matches = [match for line in transcript_lines if (match := line.get_dom_attribute("aria-label")) and "advice" in match.lower()]
-
-        for match in matches:
-            print(match)
-
-    
-    except TimeoutException:
-        print("could not find description_button in time!")
-    driver.close()
+        total_time += time.perf_counter - start_time
+    return total_time / num_loops
 
 if __name__ == "__main__":
     url = 'https://www.youtube.com/watch?v=MC7qoiJ5uPc'
@@ -280,6 +253,9 @@ if __name__ == "__main__":
     url_test_homepage_655 = 'https://www.youtube.com/@Rosemi_Lovelock/streams'
     url_test_homepage_320 = 'https://www.youtube.com/@LeeandLieVODS/videos'
     start = time.perf_counter()
-    channel_search_multi_thread(url_test_homepage_320, 7, ("start",100))
+    channel_search_multi_thread(url_test_homepage_320, 7, ("batch",100))
     end = time.perf_counter()
     print(f"Elapsed time {end -start:.6f} seconds")
+
+     #res = debug_test_loop(url=url_homepage_27,workers=7, num_loops=5)
+   # print(f"Average time processing 22 videos, 5 times: {res} seconds")
