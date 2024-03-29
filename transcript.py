@@ -12,35 +12,50 @@ from selenium.common.exceptions import ElementClickInterceptedException, Timeout
 from yt_video import Yt_Video
 import threading
 import queue
-# TODO(no priority)
 '''
+TODO(no priority)
 [] make automated testing module
 [] see if can include timestamp in link, such that clicking link sends to matched transcript line
     original             https://www.youtube.com/watch?v=u5LJ34hqPF0
     Original_in_playlist https://www.youtube.com/watch?v=Z2Cs0o72yZI&list=RDPT84G0xXDlI&index=2
     Shared link          https://youtu.be/Z2Cs0o72yZI?si=CsyEYxZqkiY2Pf32&t=76
-[]  
+    timestamp line append '&t=<hours>h<minutes>m<seconds>s'
 '''
 PAGELOADTIME = 5
 TRANSCRIPTLOADTIME = 5
 file_write_lock = threading.Lock()
 progress_lock = threading.Lock()
 err_write_lock = threading.Lock()
-# verify video is authored by specified author
-def valid_author(videoInfo, user_author):
-    # invalid input
-    if videoInfo is None or user_author is None:
+
+def valid_author(video_info: str, user_author: str):
+    """Verify video is authored by specified author
+    Args:
+        videoInfo: a str following the format 'by <author> <num views> views Streamed <publish date>
+        user_author: a str from the user specifying the name of the youtube channel(author)
+    Returns: a bool that describes whether a a video is authored by specified channel
+    """
+    if video_info is None or user_author is None:
         return False
-    #print("VALIDATING:", videoInfo)
     # Video is not published by desired author
-    if videoInfo.lower().find(user_author) == -1:
+    if video_info.lower().find(user_author.lower()) == -1:
         return False
     # Video published by desired author
     return True
 
 
 def get_transcript_matches(driver: webdriver, user_phrase: str):
-     
+    """Find lines in a transcript that contain the desired phrase
+    Args:
+        driver: a webdriver, tied to a Youtube video link, whose transcript will be analyzed
+        user_phrase: a str containing a phrase/word to look for in a transcript
+    Returns:
+        A list containing lines of str containing the desired phrase or
+        an empty list if the desired phrase is not found
+    Exception:
+       TimeoutException: an HTML element did not load in time or does not exist  
+    
+    FIXME: Currently, the timeout times are hard-coded. May want to replace with expressive constants 
+    """
     try:
         # Wait until description element is visible
         WebDriverWait(driver, 10).until(
@@ -50,7 +65,7 @@ def get_transcript_matches(driver: webdriver, user_phrase: str):
         driver.execute_script('document.querySelector("#expand").click()')
         # Wait until transcript button is visible
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH,  "//ytd-structured-description-content-renderer[@id='structured-description']//ytd-video-description-transcript-section-renderer[@class='style-scope ytd-structured-description-content-renderer']//div[@class='yt-spec-touch-feedback-shape__fill']"))        
+            EC.presence_of_element_located((By.XPATH, "//ytd-structured-description-content-renderer[@id='structured-description']//ytd-video-description-transcript-section-renderer[@class='style-scope ytd-structured-description-content-renderer']//div[@class='yt-spec-touch-feedback-shape__fill']"))        
         )
         # Use javascript to click transcript button
         driver.execute_script("document.querySelector(\"ytd-structured-description-content-renderer[id='structured-description'] ytd-video-description-transcript-section-renderer[class='style-scope ytd-structured-description-content-renderer'] div[class='yt-spec-touch-feedback-shape__fill']\").click()")
@@ -63,8 +78,47 @@ def get_transcript_matches(driver: webdriver, user_phrase: str):
     except TimeoutException:
         return "timeout"
 
-def write_matches(matches: tuple, user_phrase: str, author: str, url: str):
-    # Return when no matches found
+# Format url to include timestamp, so when it is clicked it jumps to the time
+# Adding timestamps to urls follow the format <url>&t=<hours>h<minutes>m<seconds>s
+def add_timestamp_to_url(url, unformatted_time_info):
+    if not unformatted_time_info:
+        return
+    # All unformatted time_info follows the format(oxymoronic):
+    # <num_hours> hours, <num_minutes> minutes, <num_seconds> seconds <text>
+    # Thus, split by spaces and filter hours, minutes, and seconds
+    words = unformatted_time_info.split()
+    # Amass a list to perform linear time join at end
+    timestampUrl = [url, '&t=']
+    # Iterate from the left of the information to glean timestamp values
+    for index, word in enumerate(words):
+        if 'hour' in word:
+            timestampUrl.append(''.join([words[index - 1], "h"]))
+        if 'minute' in word:
+            timestampUrl.append(''.join([words[index - 1], "m"]))
+        if 'second' in word:
+            timestampUrl.append(''.join([words[index - 1], "s"]))
+            break
+    
+    # Return url containing timestamp
+    return ''.join(timestampUrl)
+    
+
+def write_matches(matches: list, user_phrase: str, author: str, url: str):
+    """Write matches to a file, named as the author, in a formatted manner
+    
+    Ex:
+    If the author is 'apple', then the method will write to 'matches_apple.txt'
+    If n is the length of the list of matches, then the method will output to the file:
+   
+        Found n matches containing hello URL: <url>
+        <timestamp_1> <1st sentence containing phrase>
+        <timestamp_2> <2nd sentence containing phrase>
+        ...
+        <timestamp_n> <nth sentence containing phrase>
+
+    Note: This method also write errors to a file called 'error_log.txt' as:
+        timeout: <url>
+    """
     if not matches:
         return
     
@@ -87,7 +141,18 @@ def write_matches(matches: tuple, user_phrase: str, author: str, url: str):
 
 # # Create Yt_Video objects based on video elements scraped on page
 # # Playlist videos have different elements than videos displayed on a home channel page
-def find_videos(driver):
+def find_videos(driver: webdriver):
+    """
+    Find all Youtube videos present on a webpage
+    Args:
+        driver: a webdriver tied to a url containing at least 1 youtube video
+    Returns:
+        a list of YT_Video objects 
+    Exception:
+        NoSuchElementException: The desired videos to analyze could be in a Youtube playlist; moreover,
+            it follows different HTML than if the videos are on the basic Youtube channel page. Thus, this
+            exception is used to handle either case
+    """
     print("Finding Videos...")
     # determine if playlist exists
     # NOTE: playlist videos use a different ID than homepage video elements
@@ -100,7 +165,6 @@ def find_videos(driver):
             # return found videos
             return [Yt_Video(video.get_dom_attribute("aria-label"), video.get_attribute("href")) for video in videos]
     except NoSuchElementException:
-        #print("Could not find vdeos using: video-title-link")
         playlist_videos = []
         # Find all playlist videos
         for playlist_video_parent in driver.find_elements(By.ID, "wc-endpoint"):
@@ -112,17 +176,22 @@ def find_videos(driver):
         # Return videos
         return playlist_videos
     
-# scroll to the bottom of a webpage for specified amount of times
-def render_videos(video_count, debug=None):
+
+def render_videos(video_count: int, debug=None):
+    """Scroll to the bottom of a webpage based on the video_count
+    Args:
+        video_count: an int descripting 
+    Note: Youtube initially renders 30 videos.
+          Performing bottom scroll renders up to an additional 30 videos(if present).
+    """
     print("rendering videos...")
-    # Youtube initially renders 30 videos
-    # performing bottom scroll renders an additional 30 videos(if present)
     if debug:
         print(f"scrolling {video_count} times")
         for _ in range(video_count):
             pyautogui.hotkey("ctrl", "end")
             time.sleep(3)
         return
+    # Scroll to the bottom for every additional 30 videos
     if video_count:
         num_bottom_scroll = (video_count - 30) // 30
         print(f"scrolling {num_bottom_scroll} times")
@@ -130,19 +199,25 @@ def render_videos(video_count, debug=None):
             pyautogui.hotkey("ctrl", "end")
             time.sleep(3)
         
-# Workers receive work via a Queue
-def dispatch_worker(start_url, user_author_name, user_phrase, video_queue, id):
-    # open chromepage at starting url
+def dispatch_worker(user_author_name: str, user_phrase: str, video_queue: queue.Queue, id: str):
+    """Analyze videos until the given queue is empty
+    Args:
+        user_author_name: a str of the desired youtube author
+        user_phrase: a str describing the desired phrase to find in YT_Videos
+        video_queue: thread safe Queue, containing YT_Video objects to be analyzed
+        id: a str specifying the 'name' of this worker
+    Exception:
+        queue.Empty: No more videos need to be processed
+    """
+    # Open Chromepage dedicated for the worker
     driver_options = webdriver.ChromeOptions()
     driver_options.add_argument("window-size=1200,1000")
     driver_options.add_argument("mute-audio")
     driver = webdriver.Chrome(options=driver_options)
 
-    # Get a video to process from the queue
     while True:
         try:
             # Try to get a video from the queue
-            # raises queue.Empty if queue is empty
             video_to_process = video_queue.get_nowait()
             # validate video author
             if valid_author(video_to_process.get_author(), user_author_name): 
@@ -155,9 +230,15 @@ def dispatch_worker(start_url, user_author_name, user_phrase, video_queue, id):
             break
     print(f"{id} is DONE!")
   
-def channel_search_multi_thread(threaded_url, num_workers=None, video_index=None):
+def channel_search_multi_thread(threaded_url: str, num_workers=None, video_index=None):
+    """Given a URL to a Youtube channel or playlist, find all videos that contain a desired phrase 
+    Args:
+        threaded_url: a str of Youtube channel or playlist url
+        num_workers: int for the number of worker threads to run  
+        video_index: tbd 
+    """
     if not num_workers or num_workers < 1 or num_workers > 8:
-        num_workers = 2
+        num_workers = 3
     user_author_name = input("Channel name: ")
     user_phrase = input("Enter a phrase: ")
     # open chromepage at starting url
@@ -168,7 +249,10 @@ def channel_search_multi_thread(threaded_url, num_workers=None, video_index=None
     time.sleep(PAGELOADTIME)
     # get videos and convert into a queue
     videos = find_videos(driver)
-
+    if not videos:
+        print("processing single")
+        write_matches(get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, threaded_url)
+        return
     # Start at a specified position
     # Should mostly be used for debugging purposes since
     # no checks are made
@@ -180,12 +264,12 @@ def channel_search_multi_thread(threaded_url, num_workers=None, video_index=None
             videos = videos[index:]
         if location =="debug":
             videos = videos[100: 100 + index]
-        #videos = videos[video_index:]
-        #videos = videos[:video_index]
+
     # stop main window
     driver.close()
     print(f"total videos: {len(videos)}")
-    
+    with open("error_log.txt", "a") as err:
+        err.write(f"--{user_author_name}--\n")
     # queue.Queue() is thread-safe
     video_queue = queue.Queue()
     for video in videos:
@@ -196,39 +280,14 @@ def channel_search_multi_thread(threaded_url, num_workers=None, video_index=None
     id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
     workers = []
     for i in range(num_workers):
-        workers.append(threading.Thread(target=dispatch_worker, args=(threaded_url, user_author_name, user_phrase, video_queue, id[i])))
+        workers.append(threading.Thread(target=dispatch_worker, args=(user_author_name, user_phrase, video_queue, id[i])))
+    
     # Start threads
     for worker in workers:
         worker.start()
     # Complete threads
     for worker in workers:
         worker.join()
-
-
-def extract_text(url):
-    # start driver
-    # open chromepage at starting url
-    driver = webdriver.Chrome()
-    driver.get(url)
-    # Resize to prevent element rendering issues
-    driver.set_window_size(1200, 1000)
-    time.sleep(PAGELOADTIME)
-
-    #NOTE: Uncomment to test current method to find and search transcripts
-    #find_phrase_in_transcript(get_transcript(driver), "hello", "debug", url)
-    button = driver.find_element(By.XPATH, "//tp-yt-paper-button[@id='expand']")
-    button.click()
-    time.sleep(3)
-    # Check if transcript button exists
-    transcript_button = driver.find_element(By.XPATH, "//ytd-structured-description-content-renderer[@id='structured-description']//ytd-video-description-transcript-section-renderer[@class='style-scope ytd-structured-description-content-renderer']//div[@class='yt-spec-touch-feedback-shape__fill']")
-    transcript_button.click()
-    time.sleep(TRANSCRIPTLOADTIME)
-    # Get transcript element
-    x = driver.find_element(By.TAG_NAME, "ytd-transcript-renderer")
-    # Get text
-    print(len(x.text), "hello" in x.text)
-
-    driver.close()
 
 def debug_test_loop(url, workers, args, num_loops):
     total_time = 0
@@ -252,10 +311,13 @@ if __name__ == "__main__":
     url_homepage_27 = 'https://www.youtube.com/@jdh/videos'
     url_test_homepage_655 = 'https://www.youtube.com/@Rosemi_Lovelock/streams'
     url_test_homepage_320 = 'https://www.youtube.com/@LeeandLieVODS/videos'
+    url_test_homepage_504 = 'https://www.youtube.com/@EnnaAlouette/streams'
+    url_test_homepage_500 = 'https://www.youtube.com/@FujikuraUruka/streams'
+    url_kai = 'https://www.youtube.com/@KaiSaikota/streams'
+    url_doki = 'https://www.youtube.com/@Dokibird/streams'
     start = time.perf_counter()
-    channel_search_multi_thread(url_test_homepage_320, 7, ("batch",100))
+    channel_search_multi_thread(url_doki, 6)
     end = time.perf_counter()
     print(f"Elapsed time {end -start:.6f} seconds")
-
      #res = debug_test_loop(url=url_homepage_27,workers=7, num_loops=5)
    # print(f"Average time processing 22 videos, 5 times: {res} seconds")
