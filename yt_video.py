@@ -1,6 +1,5 @@
-import re
 import time
-class Yt_Video:
+class YtVideo:
     def __init__(self, video_info=None, video_url=None):
         # parse videoInfo <title> <views> <post date>
         # HAPPY NEW YEAR! Let's wait for 2024 to arrive together~! by Nerissa Ravencroft Ch. hololive-EN 72,223 views Streamed 1 day ago 3 hours, 8 minutes
@@ -26,7 +25,7 @@ class Yt_Video:
 if __name__ == "__main__":
     info = "HAPPY NEW YEAR! Let's wait for 2024 to arrive by together~! by <Nerissa Ravencroft Ch. hololive-EN> <72,223> views Streamed <1 day ago 3 hours, 8 minutes>"
     start = time.perf_counter()
-    test = Yt_Video(info)
+    test = YtVideo(info)
     test.print()
     end = time.perf_counter()
     print(f"Elapsed time {end - start:.6f} seoncds")
