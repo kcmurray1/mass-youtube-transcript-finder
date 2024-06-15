@@ -33,7 +33,8 @@ def process_data():
 @app.route('/update', methods=["PUT"])
 def update_local_data():
     """Update the local data"""
-    print("success!", flush=True)
+    print("success!\nReceived:", request.json,flush=True)
 
+    return make_response({"Result": "Updated"}, 201)
 
 

@@ -8,15 +8,21 @@ class Node:
         self.master_addr = None
         self.transcriber = TranscriptProcessor()
 
+    def _get_data(self):
+        user_author_name = input("Channel name: ")
+        user_phrase = input("Enter a phrase: ")
+        url = 'https://www.youtube.com/watch?v=7NxmTYDOPgA&list=PLDWPtsLTdtlDRtFlA61iRpY-ra_71vmAG'
+        num_workers = 5
 
+        return {"author": user_author_name, "phrase": user_phrase, "url": url, "workers": num_workers}
 
     def distribute_work(self, worker_addresses):
         """Send work to nodes across a network"""
         self.is_master = True
         worker_addresses = worker_addresses.split(',')
 
-        x = [i for i in range(200)]
-        data = {"data": x}
+        # Get data to distribute
+        data = self._get_data()
 
         for worker_addr in worker_addresses:
             try:
@@ -25,6 +31,10 @@ class Node:
             except exceptions.ConnectionError:
                 print(f"could not reach {worker_addr}")
 
+    def work(self, url, num_threads=None, author=None, phrase=None):
+        print("WORKING", flush=True)
+        # self.transcriber.channel_search_multi_thread(url, num_threads, author, phrase)
+        #self.send_results(data)
     def work(self, data):
         """Receive dictionary of data"""
         print("working", data, flush=True)
