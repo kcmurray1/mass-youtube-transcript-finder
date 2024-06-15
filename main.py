@@ -1,8 +1,6 @@
 from nodes.node import Node
 from nodes.node_flask import run_flask
 import sys
-import pyautogui
-import os
 
 
 def assign_work():

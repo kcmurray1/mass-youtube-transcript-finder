@@ -31,21 +31,17 @@ class Node:
             except exceptions.ConnectionError:
                 print(f"could not reach {worker_addr}")
 
-    def work(self, url, num_threads=None, author=None, phrase=None):
-        print("WORKING", flush=True)
-        # self.transcriber.channel_search_multi_thread(url, num_threads, author, phrase)
-        #self.send_results(data)
     def work(self, data):
         """Receive dictionary of data"""
         print("working", data, flush=True)
         # unpack data
-        author, phrase, url, num_threads = data.values()
-        print(author, phrase, num_threads, flush=True)
-        self.transcriber.channel_search_multi_thread(threaded_url=url, num_workers=num_threads, author=author, phrase=phrase)
-        self.send_results(['Hello World'])
+        author, phrase, videos, num_threads = data.values()
+        # print(author, phrase, num_threads, videos, flush=True)
+        self.transcriber.channel_search(videos, num_workers=num_threads, author=author, phrase=phrase)
+        self.send_results({"result" : ['Hello World']})
     
     def send_results(self, data):
-        res = requests.put(f"http://{self.master_addr}:5000/update", json=dict())
+        res = requests.put(f"http://{self.master_addr}:5000/update", json=data)
         print(res.json())
 
 

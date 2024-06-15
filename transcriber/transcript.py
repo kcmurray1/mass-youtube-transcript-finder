@@ -297,6 +297,40 @@ class TranscriptProcessor:
         for worker in workers:
             worker.join()
 
+    def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
+        """Given a list of videos, find all videos that contain a desired phrase 
+        Args:
+            threaded_url: a str of Youtube channel or playlist url
+            num_workers: int for the number of worker threads to run  
+            video_index: tbd 
+        """
+        if not num_workers or num_workers < 1 or num_workers > 8:
+            num_workers = 3
+
+       
+        print(f"total videos: {len(videos)}")
+        with open("error_log.txt", "a") as err:
+            err.write(f"--{author}--\n")
+        # queue.Queue() is thread-safe
+        video_queue = queue.Queue()
+        for video in videos:
+            title, _, url = video.values()
+            video_queue.put(YtVideo(video_url=url, video_author=author, video_title=title))
+
+        # assign work
+        print(f"assigning {num_workers} workers")
+        id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
+        workers = []
+        for i in range(num_workers):
+            workers.append(threading.Thread(target=self._dispatch_worker, args=(author, phrase, video_queue, id[i])))
+        
+        # Start threads
+        for worker in workers:
+            worker.start()
+        # Complete threads
+        for worker in workers:
+            worker.join()
+
     def _debug_test_loop(self, url, workers, args, num_loops):
         total_time = 0
         for _ in range(num_loops):
