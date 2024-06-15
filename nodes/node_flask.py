@@ -21,8 +21,10 @@ def process_data():
     """Command Node to process data"""
     data = request.json
     
-    if "data" not in data:
+    if "author" not in data or "phrase" not in data:
         return make_response({"error": "Missing Data"}, 400)
+    
+
     node.master_addr = request.remote_addr
     t = threading.Thread(target=node.work, args=[data])
     t.start()
