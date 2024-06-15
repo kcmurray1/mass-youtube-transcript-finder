@@ -11,6 +11,9 @@ class YtVideo:
         self.author = video_info[split_point:] if not video_author else video_author
         self.url = video_url
 
+    def as_json(self):
+        return {"title" :self.title, "author": self.author, "url": self.url}
+    
     def get_author(self):
         return self.author
     

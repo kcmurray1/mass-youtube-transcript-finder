@@ -167,7 +167,7 @@ class TranscriptProcessor:
             if videos:
                 # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
                 # return found videos
-                return [YtVideo(video.get_dom_attribute("aria-label"), video.get_attribute("href")) for video in videos]
+                return [YtVideo(video.get_dom_attribute("aria-label"), video.get_attribute("href")).as_json() for video in videos]
         except NoSuchElementException:
             playlist_videos = []
             # Find all playlist videos
@@ -176,7 +176,7 @@ class TranscriptProcessor:
                 playlist_video_url = playlist_video_parent.get_attribute("href")
                 playlist_video_title = playlist_video_parent.find_element(By.ID, "video-title").get_dom_attribute("aria-label")
                 # Add to list as YtVideo object
-                playlist_videos.append(YtVideo(playlist_video_title, playlist_video_url))
+                playlist_videos.append(YtVideo(playlist_video_title, playlist_video_url).as_json())
             # Return videos
             return playlist_videos
     
@@ -257,6 +257,8 @@ class TranscriptProcessor:
         time.sleep(PAGELOADTIME)
         # get videos and convert into a queue
         videos = self._find_videos(driver)
+        driver.close()
+        return videos
         if not videos:
             print("processing single")
             self._write_matches(self._get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, threaded_url)

@@ -14,7 +14,8 @@ class Node:
         url = 'https://www.youtube.com/watch?v=7NxmTYDOPgA&list=PLDWPtsLTdtlDRtFlA61iRpY-ra_71vmAG'
         num_workers = 5
 
-        return {"author": user_author_name, "phrase": user_phrase, "url": url, "workers": num_workers}
+        videos = self.transcriber.channel_search_multi_thread(threaded_url=url, num_workers=5, author=user_author_name, phrase=user_phrase)
+        return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": num_workers}
 
     def distribute_work(self, worker_addresses):
         """Send work to nodes across a network"""
