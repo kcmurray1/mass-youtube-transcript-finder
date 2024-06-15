@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, ElementNotInteractableException
 from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
-from yt_video import YtVideo
+from transcriber.yt_video import YtVideo
 import threading
 import queue
 '''
@@ -37,6 +37,7 @@ class TranscriptProcessor:
             user_author: a str from the user specifying the name of the youtube channel(author)
         Returns: a bool that describes whether a a video is authored by specified channel
         """
+        print(video_info)
         if video_info is None or user_author is None:
             return False
         # Video is not published by desired author
@@ -233,7 +234,7 @@ class TranscriptProcessor:
                 break
         print(f"{id} is DONE!")
   
-    def channel_search_multi_thread(self, threaded_url: str, num_workers=None, video_index=None):
+    def channel_search_multi_thread(self, threaded_url: str, num_workers=None, video_index=None, author=None, phrase=None):
         """Given a URL to a Youtube channel or playlist, find all videos that contain a desired phrase 
         Args:
             threaded_url: a str of Youtube channel or playlist url
@@ -242,8 +243,12 @@ class TranscriptProcessor:
         """
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
-        user_author_name = input("Channel name: ")
-        user_phrase = input("Enter a phrase: ")
+
+        user_author_name = author
+        user_phrase = phrase
+        if not user_author_name:
+            user_author_name = input("Channel name: ")
+            user_phrase = input("Enter a phrase: ")
         # open chromepage at starting url
         driver = webdriver.Chrome()
         driver.get(threaded_url)
@@ -305,22 +310,12 @@ if __name__ == "__main__":
     url = 'https://www.youtube.com/watch?v=MC7qoiJ5uPc'
     url_long_video = 'https://www.youtube.com/watch?v=SvwjrmKmggs'
     url_no_transcript = 'https://www.youtube.com/watch?v=IdVUOXkA7fk&list=RDwLj-vovaGRs&index=10'
-    url_test_homepage = 'https://www.youtube.com/@ScarleYonaguni/streams'
-    url_test_homepage_127 = 'https://www.youtube.com/@NerissaRavencroft/streams'
-    url_test_homepage_377 = 'https://www.youtube.com/@OuroKronii/streams'
     url_playlist = 'https://www.youtube.com/watch?v=7NxmTYDOPgA&list=PLDWPtsLTdtlDRtFlA61iRpY-ra_71vmAG'
     url_not_youtube = 'https://www.google.com/'
-    who = 'https://www.youtube.com/@MoriCalliope/streams'
     url_homepage_27 = 'https://www.youtube.com/@jdh/videos'
-    url_test_homepage_655 = 'https://www.youtube.com/@Rosemi_Lovelock/streams'
-    url_test_homepage_320 = 'https://www.youtube.com/@LeeandLieVODS/videos'
-    url_test_homepage_504 = 'https://www.youtube.com/@EnnaAlouette/streams'
-    url_test_homepage_500 = 'https://www.youtube.com/@FujikuraUruka/streams'
-    url_kai = 'https://www.youtube.com/@KaiSaikota/streams'
-    url_doki = 'https://www.youtube.com/@Dokibird/streams'
     start = time.perf_counter()
     processor = TranscriptProcessor()
-    processor.channel_search_multi_thread(url_doki, 6)
+    processor.channel_search_multi_thread(url_long_video, 3)
     end = time.perf_counter()
     print(f"Elapsed time {end -start:.6f} seconds")
      #res = debug_test_loop(url=url_homepage_27,workers=7, num_loops=5)
