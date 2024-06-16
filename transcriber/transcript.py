@@ -1,9 +1,7 @@
 
 import pyautogui
 import time
-from pynput import mouse
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -31,6 +29,8 @@ class TranscriptProcessor:
         self.progress_lock = threading.Lock()
         self.err_write_lock = threading.Lock()
         self.current_author = None
+        self.result_file = None
+        self.error_file = None
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
@@ -86,6 +86,7 @@ class TranscriptProcessor:
 
     # Format url to include timestamp, so when it is clicked it jumps to the time
     # Adding timestamps to urls follow the format <url>&t=<hours>h<minutes>m<seconds>s
+    # NOTE: unsused
     def add_timestamp_to_url(self, url, unformatted_time_info):
         if not unformatted_time_info:
             return
@@ -132,7 +133,7 @@ class TranscriptProcessor:
         if isinstance(matches, str):
             with self.err_write_lock:
                 print(matches)
-                with open(LOG_DIR + "/error_log.txt", "a") as err:
+                with open(self.error_file, "a") as err:
                     err.write(f"{matches}: {url}\n")
             return
 
@@ -140,7 +141,7 @@ class TranscriptProcessor:
         # mutex to ensure only one thread writes to file at a time
         with self.file_write_lock:
             # write matches to file
-            with open(f"{LOG_DIR}/matches_{author}.txt", "a") as f:
+            with open(self.result_file, "a") as f:
                 # Reduce write operations to files to hopefully improve performance
                 # using .join() concats strings in O(n)
                 f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
@@ -149,7 +150,7 @@ class TranscriptProcessor:
     # # Playlist videos have different elements than videos displayed on a home channel page
     def _find_videos(self, driver: webdriver):
         """
-        Find all Youtube videos present on a webpage
+        Helper to Find all Youtube videos present on a webpage
         Args:
             driver: a webdriver tied to a url containing at least 1 youtube video
         Returns:
@@ -182,6 +183,20 @@ class TranscriptProcessor:
             # Return videos
             return playlist_videos
     
+    def find_videos(self, yt_url):
+        """Extract all videos from a youtube webpage"""
+        # open chromepage at starting url
+        driver = webdriver.Chrome()
+        driver.get(yt_url)
+        # Resize to prevent element rendering issues
+        driver.set_window_size(1200, 1000)
+        time.sleep(PAGELOADTIME)
+
+        # return videos
+        videos = self._find_videos(driver)
+        driver.close()
+        return videos
+
 
     def _render_videos(self, video_count: int, debug=None):
         """Scroll to the bottom of a webpage based on the video_count
@@ -236,71 +251,6 @@ class TranscriptProcessor:
                 break
         print(f"{id} is DONE!")
   
-    def channel_search_multi_thread(self, threaded_url: str, num_workers=None, video_index=None, author=None, phrase=None):
-        """Given a URL to a Youtube channel or playlist, find all videos that contain a desired phrase 
-        Args:
-            threaded_url: a str of Youtube channel or playlist url
-            num_workers: int for the number of worker threads to run  
-            video_index: tbd 
-        """
-        if not num_workers or num_workers < 1 or num_workers > 8:
-            num_workers = 3
-
-        user_author_name = author
-        user_phrase = phrase
-        self.current_author = author
-        if not user_author_name:
-            user_author_name = input("Channel name: ")
-            user_phrase = input("Enter a phrase: ")
-        # open chromepage at starting url
-        driver = webdriver.Chrome()
-        driver.get(threaded_url)
-        # Resize to prevent element rendering issues
-        driver.set_window_size(1200, 1000)
-        time.sleep(PAGELOADTIME)
-        # get videos and convert into a queue
-        videos = self._find_videos(driver)
-        driver.close()
-        return videos
-        if not videos:
-            print("processing single")
-            self._write_matches(self._get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, threaded_url)
-            return
-        # Start at a specified position
-        # Should mostly be used for debugging purposes since
-        # no checks are made
-        if video_index:
-            location, index = video_index
-            if location == "end":
-                videos = videos[:index]
-            if location == "start":
-                videos = videos[index:]
-            if location =="debug":
-                videos = videos[100: 100 + index]
-
-        # stop main window
-        driver.close()
-        print(f"total videos: {len(videos)}")
-        with open(LOG_DIR + "/error_log.txt", "a") as err:
-            err.write(f"--{user_author_name}--\n")
-        # queue.Queue() is thread-safe
-        video_queue = queue.Queue()
-        for video in videos:
-            video_queue.put(video)
-
-        # assign work
-        print(f"assigning {num_workers} workers")
-        id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
-        workers = []
-        for i in range(num_workers):
-            workers.append(threading.Thread(target=self._dispatch_worker, args=(user_author_name, user_phrase, video_queue, id[i])))
-        
-        # Start threads
-        for worker in workers:
-            worker.start()
-        # Complete threads
-        for worker in workers:
-            worker.join()
 
     def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
         """Given a list of videos, find all videos that contain a desired phrase 
@@ -311,10 +261,13 @@ class TranscriptProcessor:
         """
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
-
+        
+        # Update attributes
         self.current_author = author
+        self.result_file = f"{LOG_DIR}/matches_{author}.txt"
+        self.error_file = f"{LOG_DIR}/error_log.txt"
         print(f"total videos: {len(videos)}")
-        with open(LOG_DIR + "/error_log.txt", "a") as err:
+        with open(self.error_file, "a") as err:
             err.write(f"--{author}--\n")
         # queue.Queue() is thread-safe
         video_queue = queue.Queue()

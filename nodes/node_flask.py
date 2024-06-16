@@ -1,4 +1,4 @@
-from flask import Flask, make_response, jsonify, request, send_file, send_from_directory
+from flask import Flask, make_response, jsonify, request
 from nodes.node import Node
 import threading
 node = Node()
@@ -14,8 +14,7 @@ def run_flask(new_node):
 @app.route('/')
 def home():
     """Check status of node"""
-    return send_file("error_log.txt")
-    # return make_response({"result": 'Running'}, 200)
+    return make_response({"result": 'Running'}, 200)
 
 @app.route('/process', methods=["PUT"])
 def process_data():
@@ -25,7 +24,6 @@ def process_data():
     if "author" not in data or "phrase" not in data:
         return make_response({"error": "Missing Data"}, 400)
     
-
     node.master_addr = request.remote_addr
     t = threading.Thread(target=node.work, args=[data])
     t.start()
@@ -34,7 +32,7 @@ def process_data():
 @app.route('/update', methods=["PUT", "POST"])
 def update_local_data():
     """Update the local data"""
-    print(request.get_data(as_text=True))
+    node.update_local_data(request.get_data(as_text=True))
     return make_response({"Result": "Updated"}, 201)
 
 

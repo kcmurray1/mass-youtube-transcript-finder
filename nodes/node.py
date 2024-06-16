@@ -11,21 +11,24 @@ class Node:
     def _get_data(self):
         user_author_name = input("Channel name: ")
         user_phrase = input("Enter a phrase: ")
-        url = 'https://www.youtube.com/watch?v=7NxmTYDOPgA&list=PLDWPtsLTdtlDRtFlA61iRpY-ra_71vmAG'
+        url = None
+        if not url:
+            url = input("Enter a url: ")
+        
         num_workers = 5
 
-        videos = self.transcriber.channel_search_multi_thread(threaded_url=url, num_workers=5, author=user_author_name, phrase=user_phrase)
+        videos = self.transcriber.find_videos(yt_url=url)
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": num_workers}
 
     def distribute_work(self, worker_addresses):
         """Send work to nodes across a network"""
         self.is_master = True
         worker_addresses = worker_addresses.split(',')
-
+        
         # Get data to distribute
         data = self._get_data()
-        # split videos among number of workers including itself
 
+        # split videos among number of workers including itself
         video_split = balance(data["videos"], len(worker_addresses) + 1)
 
         for worker_addr in worker_addresses:
@@ -35,20 +38,38 @@ class Node:
                 print(res.json())
             except exceptions.ConnectionError:
                 print(f"could not reach {worker_addr}")
-        print(f"remaining vids {len(video_split[0])}", flush=True)
+        
+        # Perform work on the remaining data
+        for videos in video_split:
+            data["videos"] = videos
+            self.work(data)
 
     def work(self, data):
         """Receive dictionary of data"""
-        print("working", data, flush=True)
         # unpack data
         author, phrase, videos, num_threads = data.values()
-        # print(author, phrase, num_threads, videos, flush=True)
         self.transcriber.channel_search(videos, num_workers=num_threads, author=author, phrase=phrase)
-        self.send_results({"author" : self.transcriber.current_author})
+
+        # Report results to master node
+        if not self.is_master:
+            self.send_results({"author" : self.transcriber.current_author})
     
     def send_results(self, data):
-        res = requests.post(f"http://{self.master_addr}:5000/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
+        """send information to the master node
+        """
+        try:
+            requests.post(f"http://{self.master_addr}:5000/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
+        except exceptions.ConnectionError:
+            pass
 
+    def update_local_data(self, text):
+
+        text = text.encode('ascii', 'ignore')
+        text = text.decode()
+
+        with open(self.transcriber.result_file, 'a') as results:
+            for line in text.split('\r\n'):
+                results.write(line + '\n')
 
 def balance(a, n):
     # split a among n buckets
