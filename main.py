@@ -15,16 +15,11 @@ def assign_work():
 
 
 def test():
-    res = requests.get("http://10.0.0.4:5000/", json=dict())
-
-    # print(res.json())
-    file_data = res.content.decode()
-
-    if file_data:
-        print(file_data)
-    else:
-        print("No data")
+    node = Node()
+    node.master_addr = '10.0.0.222'
+    node.transcriber.current_author = None
+    node.send_results({'author':'hello'})
 
 if __name__ == "__main__":
-    assign_work()
-    # test()
+    # assign_work()
+    test()
