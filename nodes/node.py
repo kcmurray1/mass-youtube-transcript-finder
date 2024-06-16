@@ -39,11 +39,10 @@ class Node:
         author, phrase, videos, num_threads = data.values()
         # print(author, phrase, num_threads, videos, flush=True)
         self.transcriber.channel_search(videos, num_workers=num_threads, author=author, phrase=phrase)
-        self.send_results({"result" : ['Hello World']})
+        self.send_results({"author" : self.transcriber.current_author})
     
     def send_results(self, data):
-        res = requests.put(f"http://{self.master_addr}:5000/update", json=data)
-        print(res.json())
+        res = requests.post(f"http://{self.master_addr}:5000/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
 
 
 def balance(a, n):

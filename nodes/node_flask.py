@@ -1,4 +1,4 @@
-from flask import Flask, make_response, jsonify, request
+from flask import Flask, make_response, jsonify, request, send_file, send_from_directory
 from nodes.node import Node
 import threading
 node = Node()
@@ -14,7 +14,8 @@ def run_flask(new_node):
 @app.route('/')
 def home():
     """Check status of node"""
-    return make_response({"result": 'Running'}, 200)
+    return send_file("error_log.txt")
+    # return make_response({"result": 'Running'}, 200)
 
 @app.route('/process', methods=["PUT"])
 def process_data():

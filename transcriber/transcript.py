@@ -23,12 +23,14 @@ TODO(no priority)
 '''
 PAGELOADTIME = 5
 TRANSCRIPTLOADTIME = 5
+LOG_DIR = 'nodes'
 
 class TranscriptProcessor:
     def __init__(self):
         self.file_write_lock = threading.Lock()
         self.progress_lock = threading.Lock()
         self.err_write_lock = threading.Lock()
+        self.current_author = None
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
@@ -130,7 +132,7 @@ class TranscriptProcessor:
         if isinstance(matches, str):
             with self.err_write_lock:
                 print(matches)
-                with open("error_log.txt", "a") as err:
+                with open(LOG_DIR + "/error_log.txt", "a") as err:
                     err.write(f"{matches}: {url}\n")
             return
 
@@ -138,7 +140,7 @@ class TranscriptProcessor:
         # mutex to ensure only one thread writes to file at a time
         with self.file_write_lock:
             # write matches to file
-            with open(f"matches_{author}.txt", "a") as f:
+            with open(f"{LOG_DIR}/matches_{author}.txt", "a") as f:
                 # Reduce write operations to files to hopefully improve performance
                 # using .join() concats strings in O(n)
                 f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
@@ -246,6 +248,7 @@ class TranscriptProcessor:
 
         user_author_name = author
         user_phrase = phrase
+        self.current_author = author
         if not user_author_name:
             user_author_name = input("Channel name: ")
             user_phrase = input("Enter a phrase: ")
@@ -278,7 +281,7 @@ class TranscriptProcessor:
         # stop main window
         driver.close()
         print(f"total videos: {len(videos)}")
-        with open("error_log.txt", "a") as err:
+        with open(LOG_DIR + "/error_log.txt", "a") as err:
             err.write(f"--{user_author_name}--\n")
         # queue.Queue() is thread-safe
         video_queue = queue.Queue()
@@ -309,9 +312,9 @@ class TranscriptProcessor:
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
 
-       
+        self.current_author = author
         print(f"total videos: {len(videos)}")
-        with open("error_log.txt", "a") as err:
+        with open(LOG_DIR + "/error_log.txt", "a") as err:
             err.write(f"--{author}--\n")
         # queue.Queue() is thread-safe
         video_queue = queue.Queue()
