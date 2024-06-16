@@ -31,11 +31,10 @@ def process_data():
     t.start()
     return make_response({"result": "ok"}, 201)
 
-@app.route('/update', methods=["PUT"])
+@app.route('/update', methods=["PUT", "POST"])
 def update_local_data():
     """Update the local data"""
-    print("success!\nReceived:", request.json,flush=True)
-
+    print(request.get_data(as_text=True))
     return make_response({"Result": "Updated"}, 201)
 
 

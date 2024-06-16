@@ -24,13 +24,18 @@ class Node:
 
         # Get data to distribute
         data = self._get_data()
+        # split videos among number of workers including itself
+
+        video_split = balance(data["videos"], len(worker_addresses) + 1)
 
         for worker_addr in worker_addresses:
             try:
+                data["videos"] = video_split.pop()
                 res = requests.put(f"http://{worker_addr}/process", json=data)
                 print(res.json())
             except exceptions.ConnectionError:
                 print(f"could not reach {worker_addr}")
+        print(f"remaining vids {len(video_split[0])}", flush=True)
 
     def work(self, data):
         """Receive dictionary of data"""
@@ -68,7 +73,7 @@ def balance(a, n):
         res[i] += a[cur_index: end_index]
       
 
-    print(res)
+    return res
 
 
 if __name__ == "__main__":
