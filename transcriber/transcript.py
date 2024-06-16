@@ -39,7 +39,6 @@ class TranscriptProcessor:
             user_author: a str from the user specifying the name of the youtube channel(author)
         Returns: a bool that describes whether a a video is authored by specified channel
         """
-        print(video_info)
         if video_info is None or user_author is None:
             return False
         # Video is not published by desired author
@@ -262,6 +261,9 @@ class TranscriptProcessor:
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
         
+        if not videos:
+            print("No videos found!", flush=True)
+            return
         # Update attributes
         self.current_author = author
         self.result_file = f"{LOG_DIR}/matches_{author}.txt"
@@ -272,8 +274,8 @@ class TranscriptProcessor:
         # queue.Queue() is thread-safe
         video_queue = queue.Queue()
         for video in videos:
-            title, _, url = video.values()
-            video_queue.put(YtVideo(video_url=url, video_author=author, video_title=title))
+            title, yt_author, url = video.values()
+            video_queue.put(YtVideo(video_url=url, video_author=yt_author, video_title=title))
 
         # assign work
         print(f"assigning {num_workers} workers")

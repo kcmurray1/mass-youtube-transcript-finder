@@ -18,6 +18,7 @@ class Node:
         num_workers = 5
 
         videos = self.transcriber.find_videos(yt_url=url)
+        print(f"Found a {len(videos)} total!")
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": num_workers}
 
     def distribute_work(self, worker_addresses):
