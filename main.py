@@ -21,5 +21,5 @@ def test():
     node.send_results({'author':'hello'})
 
 if __name__ == "__main__":
-    # assign_work()
-    test()
+    assign_work()
+    # test()

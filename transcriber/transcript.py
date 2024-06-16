@@ -145,8 +145,6 @@ class TranscriptProcessor:
                 # using .join() concats strings in O(n)
                 f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
 
-    # # Create YtVideo objects based on video elements scraped on page
-    # # Playlist videos have different elements than videos displayed on a home channel page
     def _find_videos(self, driver: webdriver):
         """
         Helper to Find all Youtube videos present on a webpage
@@ -183,7 +181,14 @@ class TranscriptProcessor:
             return playlist_videos
     
     def find_videos(self, yt_url):
-        """Extract all videos from a youtube webpage"""
+        """Extract all videos from a youtube webpage
+        
+        Args:
+            yt_url: A string representing the url to open
+
+        Returns:
+            A list of Yt_video organized into author, title, and url 
+        """
         # open chromepage at starting url
         driver = webdriver.Chrome()
         driver.get(yt_url)
@@ -252,11 +257,13 @@ class TranscriptProcessor:
   
 
     def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
-        """Given a list of videos, find all videos that contain a desired phrase 
+        """Given a list of videos, find all videos of a specified author containing a desired phrase 
         Args:
-            threaded_url: a str of Youtube channel or playlist url
-            num_workers: int for the number of worker threads to run  
-            video_index: tbd 
+            videos: a list of Yt_video objects to operate on
+            num_workers: int for the number of worker threads to run
+            author: a str for the name of the youtube channel
+            phrase: a str for the phrase to look for  
+            video_index: TBD
         """
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
@@ -264,20 +271,20 @@ class TranscriptProcessor:
         if not videos:
             print("No videos found!", flush=True)
             return
-        # Update attributes
+        # Update class attributes
         self.current_author = author
         self.result_file = f"{LOG_DIR}/matches_{author}.txt"
         self.error_file = f"{LOG_DIR}/error_log.txt"
         print(f"total videos: {len(videos)}")
         with open(self.error_file, "a") as err:
             err.write(f"--{author}--\n")
-        # queue.Queue() is thread-safe
+        # NOTE: queue.Queue() is thread-safe
         video_queue = queue.Queue()
         for video in videos:
             title, yt_author, url = video.values()
             video_queue.put(YtVideo(video_url=url, video_author=yt_author, video_title=title))
 
-        # assign work
+        # assign work to threads
         print(f"assigning {num_workers} workers")
         id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
         workers = []

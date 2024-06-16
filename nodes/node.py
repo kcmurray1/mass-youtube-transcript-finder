@@ -9,20 +9,28 @@ class Node:
         self.transcriber = TranscriptProcessor()
 
     def _get_data(self):
+        """Get necessary data to distribute work
+        Returns:
+            A dictionary containing pertinent data
+        """
         user_author_name = input("Channel name: ")
         user_phrase = input("Enter a phrase: ")
         url = None
         if not url:
             url = input("Enter a url: ")
         
-        num_workers = 5
+        num_workers = 4
 
         videos = self.transcriber.find_videos(yt_url=url)
         print(f"Found a {len(videos)} total!")
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": num_workers}
 
     def distribute_work(self, worker_addresses):
-        """Send work to nodes across a network"""
+        """Send work to nodes across a network
+        Args:
+            worker_addresses: a comma separated string of addresses of machines
+            to distribute work to
+        """
         self.is_master = True
         worker_addresses = worker_addresses.split(',')
         
@@ -46,7 +54,12 @@ class Node:
             self.work(data)
 
     def work(self, data):
-        """Receive dictionary of data"""
+        """Perform work based on specifications and report to main node
+        
+        Args:
+            data: A dict containing necessary details to perform work
+        """
+
         # unpack data
         author, phrase, videos, num_threads = data.values()
         self.transcriber.channel_search(videos, num_workers=num_threads, author=author, phrase=phrase)
@@ -56,7 +69,10 @@ class Node:
             self.send_results({"author" : self.transcriber.current_author})
     
     def send_results(self, data):
-        """send information to the master node
+        """send results from work to the main node
+
+        Args:
+            data: a dict containing metadata necessary for recipient to validate request
         """
         try:
             requests.post(f"http://{self.master_addr}:5000/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
@@ -64,7 +80,13 @@ class Node:
             pass
 
     def update_local_data(self, text):
+        """Write received data into local files
+        
+        Args:
+            text: A large string representing text sent from a worker node
+        """
 
+        # Convert non-support encodings into supported ascii encodings
         text = text.encode('ascii', 'ignore')
         text = text.decode()
 
@@ -73,7 +95,21 @@ class Node:
                 results.write(line + '\n')
 
 def balance(a, n):
-    # split a among n buckets
+    """evenly split items n-ways
+    Args:
+        a: A list of items to be split
+        n: An int representing the number of splits to make
+    Returns:
+        A 2d list of where with n rows
+    
+    NOTE: If n is larger than the number of items in a, then
+    this function will fill the first n rows, leaving the remaining ones empty
+
+    Ex: 
+    a = [1,2,3]
+    n = 5
+    balance(a,n) = [[1],[2],[3],[],[]]
+    """
     num_items = len(a)
     remainder = num_items % n
 
@@ -97,7 +133,7 @@ def balance(a, n):
 
     return res
 
-
+# Used to balance()
 if __name__ == "__main__":
     arr = [0,1,3]
     balance(arr, 5)
