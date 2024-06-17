@@ -251,8 +251,12 @@ class TranscriptProcessor:
                     self._write_matches(self._get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
                 with self.progress_lock:
                     print(f"Queue size: {video_queue.qsize()}")
-            except queue.Empty:
-                break
+            # Restart work if an uncaught exception is thrown
+            except (Exception, queue.Empty) as e:
+                if isinstance(e, queue.Empty):
+                    break
+                continue
+
         print(f"{id} is DONE!")
   
 
@@ -297,6 +301,7 @@ class TranscriptProcessor:
         # Complete threads
         for worker in workers:
             worker.join()
+       
 
     def _debug_test_loop(self, url, workers, args, num_loops):
         total_time = 0
