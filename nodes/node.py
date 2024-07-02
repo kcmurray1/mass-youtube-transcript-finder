@@ -133,7 +133,7 @@ def balance(a, n):
 
     return res
 
-# Used to balance()
+# Used to test balance()
 if __name__ == "__main__":
     arr = [0,1,3]
     balance(arr, 5)

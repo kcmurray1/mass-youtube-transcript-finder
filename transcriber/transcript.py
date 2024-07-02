@@ -31,6 +31,8 @@ class TranscriptProcessor:
         self.current_author = None
         self.result_file = None
         self.error_file = None
+        self.match_count = 0
+        self.error_count = 0
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
@@ -133,6 +135,7 @@ class TranscriptProcessor:
             with self.err_write_lock:
                 print(matches)
                 with open(self.error_file, "a") as err:
+                    self.error_count += 1
                     err.write(f"{matches}: {url}\n")
             return
 
@@ -141,6 +144,7 @@ class TranscriptProcessor:
         with self.file_write_lock:
             # write matches to file
             with open(self.result_file, "a") as f:
+                self.match_count += len(matches)
                 # Reduce write operations to files to hopefully improve performance
                 # using .join() concats strings in O(n)
                 f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
@@ -206,10 +210,16 @@ class TranscriptProcessor:
         """Scroll to the bottom of a webpage based on the video_count
         Args:
             video_count: an int descripting 
-        Note: Youtube initially renders 30 videos.
+        NOTE: Youtube initially renders 30 videos.
             Performing bottom scroll renders up to an additional 30 videos(if present).
         """
         print("rendering videos...")
+
+        # Perform one scroll to the bottom of the webpage to handle
+        # A bug where prescence of video elements are obscured by Chrome pop-ups
+        pyautogui.hotkey("ctrl", "end")
+        time.sleep(3)
+
         if debug:
             print(f"scrolling {video_count} times")
             for _ in range(video_count):
@@ -218,11 +228,13 @@ class TranscriptProcessor:
             return
         # Scroll to the bottom for every additional 30 videos
         if video_count:
-            num_bottom_scroll = (video_count - 30) // 30
+            num_bottom_scroll = ((video_count - 30) // 30)
             print(f"scrolling {num_bottom_scroll} times")
             for _ in range(num_bottom_scroll):
                 pyautogui.hotkey("ctrl", "end")
                 time.sleep(3)
+        else:
+            print("no video_count: ", video_count, flush=True)
         
     def _dispatch_worker(self, user_author_name: str, user_phrase: str, video_queue: queue.Queue, id: str):
         """Analyze videos until the given queue is empty
@@ -250,7 +262,7 @@ class TranscriptProcessor:
                     # Attempt to find a transcript and see if it contains the user's phrase
                     self._write_matches(self._get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
                 with self.progress_lock:
-                    print(f"Queue size: {video_queue.qsize()}")
+                    print(f"Queue size: {video_queue.qsize()}", end='\r')
             # Restart work if an uncaught exception is thrown
             except (Exception, queue.Empty) as e:
                 if isinstance(e, queue.Empty):
@@ -302,6 +314,10 @@ class TranscriptProcessor:
         for worker in workers:
             worker.join()
        
+        counts = [self.match_count, self.error_count]
+        self.match_count = 0
+        self.error_count = 0
+        return counts
 
     def _debug_test_loop(self, url, workers, args, num_loops):
         total_time = 0
