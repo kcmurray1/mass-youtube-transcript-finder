@@ -1,7 +1,8 @@
-
+from .paths import Paths
 import pyautogui
 import time
 from selenium import webdriver
+from selenium.webdriver import Keys, ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -66,19 +67,19 @@ class TranscriptProcessor:
         try:
             # Wait until description element is visible
             WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//tp-yt-paper-button[@id='expand']"))          
+                EC.presence_of_element_located((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
             )
             # Use javascript to click desc button
             driver.execute_script('document.querySelector("#expand").click()')
             # Wait until transcript button is visible
             WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//ytd-structured-description-content-renderer[@id='structured-description']//ytd-video-description-transcript-section-renderer[@class='style-scope ytd-structured-description-content-renderer']//div[@class='yt-spec-touch-feedback-shape__fill']"))        
+                EC.presence_of_all_elements_located((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
             )
             # Use javascript to click transcript button
             driver.execute_script("document.querySelector(\"ytd-structured-description-content-renderer[id='structured-description'] ytd-video-description-transcript-section-renderer[class='style-scope ytd-structured-description-content-renderer'] div[class='yt-spec-touch-feedback-shape__fill']\").click()")
             # Wait for transcript elements to load
             transcript_lines = WebDriverWait(driver, 20).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[class='segment style-scope ytd-transcript-segment-renderer']"))
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
             )
             # Return transcript lines that contain specified phrase
             return [match for line in transcript_lines if (match := line.get_dom_attribute("aria-label")) and user_phrase in match.lower()]
@@ -166,8 +167,12 @@ class TranscriptProcessor:
         # NOTE: playlist videos use a different ID than homepage video elements
         try:
             # Render all of the videos 
-            self._render_videos(int(driver.find_element(By.ID, "videos-count").text.split()[0]))
-            videos = driver.find_elements(By.ID, "video-title-link") 
+            self._render_videos(int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0]))
+
+            print('rendered vids')
+            
+            videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
+            
             if videos:
                 # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
                 # return found videos
@@ -175,10 +180,10 @@ class TranscriptProcessor:
         except NoSuchElementException:
             playlist_videos = []
             # Find all playlist videos
-            for playlist_video_parent in driver.find_elements(By.ID, "wc-endpoint"):
+            for playlist_video_parent in driver.find_elements(By.ID, Paths.ID_PLAYLIST_VIDEO):
                 # Extract the URL and video title
                 playlist_video_url = playlist_video_parent.get_attribute("href")
-                playlist_video_title = playlist_video_parent.find_element(By.ID, "video-title").get_dom_attribute("aria-label")
+                playlist_video_title = playlist_video_parent.find_element(By.ID, Paths.ID_PLAYLIST_VIDEO_TITLE).get_dom_attribute("aria-label")
                 # Add to list as YtVideo object
                 playlist_videos.append(YtVideo(playlist_video_title, playlist_video_url).as_json())
             # Return videos
@@ -205,7 +210,7 @@ class TranscriptProcessor:
         driver.close()
         return videos
 
-
+       
     def _render_videos(self, video_count: int, debug=None):
         """Scroll to the bottom of a webpage based on the video_count
         Args:
@@ -319,26 +324,7 @@ class TranscriptProcessor:
         self.error_count = 0
         return counts
 
-    def _debug_test_loop(self, url, workers, args, num_loops):
-        total_time = 0
-        for _ in range(num_loops):
-            start_time = time.perf_counter
-            self.channel_search_multi_thread(url, workers, args)
-
-            total_time += time.perf_counter - start_time
-        return total_time / num_loops
-
 if __name__ == "__main__":
-    url = 'https://www.youtube.com/watch?v=MC7qoiJ5uPc'
-    url_long_video = 'https://www.youtube.com/watch?v=SvwjrmKmggs'
     url_no_transcript = 'https://www.youtube.com/watch?v=IdVUOXkA7fk&list=RDwLj-vovaGRs&index=10'
     url_playlist = 'https://www.youtube.com/watch?v=7NxmTYDOPgA&list=PLDWPtsLTdtlDRtFlA61iRpY-ra_71vmAG'
     url_not_youtube = 'https://www.google.com/'
-    url_homepage_27 = 'https://www.youtube.com/@jdh/videos'
-    start = time.perf_counter()
-    processor = TranscriptProcessor()
-    processor.channel_search_multi_thread(url_long_video, 3)
-    end = time.perf_counter()
-    print(f"Elapsed time {end -start:.6f} seconds")
-     #res = debug_test_loop(url=url_homepage_27,workers=7, num_loops=5)
-   # print(f"Average time processing 22 videos, 5 times: {res} seconds")
