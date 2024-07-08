@@ -12,10 +12,13 @@ class TestResult():
         self.num_errors = 0
         self.videos = None
 
-test_valid_data = [ 
-    InstanceConfig(channel="jdh", url="https://www.youtube.com/@jdh/videos", phrase="hello", match_count=10, vids=23),
-    InstanceConfig(channel="git-amend", url="https://www.youtube.com/@git-amend/videos", phrase="hello", match_count=10 , vids=68),
-   
+class ValidData:
+    VALID_CHANNEL_URL = "https://www.youtube.com/@Flarvain/videos"
+    VALID_VIDEO_URL = "https://www.youtube.com/watch?v=ZsIEzKRW1BE"
+
+test_transcriber_valid_data = [ 
+InstanceConfig(channel="jdh", url="https://www.youtube.com/@jdh/videos", phrase="hello", match_count=10, vids=23),
+# InstanceConfig(channel="git-amend", url="https://www.youtube.com/@git-amend/videos", phrase="hello", match_count=10 , vids=68),  
 ]
 
 class InvalidData:

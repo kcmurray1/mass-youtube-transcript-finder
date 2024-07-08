@@ -7,7 +7,6 @@ import argparse
 p = argparse.ArgumentParser()
 p.add_argument('--test', action='store_true')
 options, args = p.parse_known_args()
-print(options)
 
 def assign_work():
     """Determine whether to treat this instance as a master or worker node"""

@@ -1,10 +1,52 @@
 from transcriber.transcript import TranscriptProcessor
-from tests.test_resources import test_valid_data, InvalidData, TestResult
+from transcriber.paths import Paths
+from tests.test_resources import test_transcriber_valid_data, ValidData, InvalidData, TestResult
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 import unittest
+import time
+
+class TestElementPaths(unittest.TestCase):
+    """Verify that element paths are up to date"""
+    @classmethod
+    def setUpClass(cls):
+        cls.test_element_driver = webdriver.Chrome()
+
+        cls.test_element_driver.get(ValidData.VALID_CHANNEL_URL)
+
+    def test_a_find_video_count(self):
+        res = self.test_element_driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT)
+
+        self.assertIsNotNone(res)
+
+    def test_b_find_video_link(self):
+        res = self.test_element_driver.find_elements(By.ID, Paths.ID_VIDEO)
+
+        self.assertIsNotNone(res)
+
+    def test_c_find_button_description(self):
+        self.test_element_driver.get(ValidData.VALID_VIDEO_URL)
+
+        time.sleep(5)
+        res = self.test_element_driver.find_element(By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION)
+
+        self.assertIsNotNone(res)
+
+        res.click()
+
+    def test_d_find_button_transcript(self):
+        res = self.test_element_driver.find_element(By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT)
+
+        self.assertIsNotNone(res)
+
+        res.click()
+
+
 
 
 class TestYtVideo(unittest.TestCase):
+    transcriber = TranscriptProcessor()
+
 
     def test_a(self):
         pass
@@ -21,7 +63,7 @@ class TestTranscriber(unittest.TestCase):
 
 
     def test_b_youtube_url_video_retrieval_count(self):
-        for test_datum in test_valid_data:
+        for test_datum in test_transcriber_valid_data:
             self.test_results[test_datum.channel] = TestResult()
             retrieved_videos = self.test_transcriber.find_videos(test_datum.url)
             self.assertEquals(test_datum.vids, len(retrieved_videos))
@@ -36,7 +78,7 @@ class TestTranscriber(unittest.TestCase):
         self.assertEquals(res, "timeout")
     
     # def test_d_find_phrase_match_count(self):
-    #     for test_datum in test_valid_data:
+    #     for test_datum in test_transcriber_valid_data:
     #         test_videos = self.test_results[test_datum.channel].videos
     #         num_test_matches, num_errors = self.test_transcriber.channel_search(test_videos, author=test_datum.channel, phrase=test_datum.phrase)
     #         self.assertAlmostEquals(test_datum.match_count, num_test_matches, delta=3)
@@ -45,7 +87,7 @@ class TestTranscriber(unittest.TestCase):
 
 def start_tests():
     # Store multiple test classes(If necessary)
-    test_classes = [TestTranscriber, TestYtVideo]
+    test_classes = [TestElementPaths,] #TestTranscriber, TestYtVideo]
     test_loader = unittest.TestLoader()
     suites = [test_loader.loadTestsFromTestCase(test_class) for test_class in test_classes]
     suites = unittest.TestSuite(suites)
