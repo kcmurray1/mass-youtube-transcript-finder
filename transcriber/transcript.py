@@ -2,26 +2,18 @@ from .paths import Paths
 import pyautogui
 import time
 from selenium import webdriver
-from selenium.webdriver import Keys, ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, ElementNotInteractableException
-from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from transcriber.yt_video import YtVideo
 import threading
 import queue
-'''
-TODO(no priority)
-[] make automated testing module
-[] see if can include timestamp in link, such that clicking link sends to matched transcript line
-    original             https://www.youtube.com/watch?v=u5LJ34hqPF0
-    Original_in_playlist https://www.youtube.com/watch?v=Z2Cs0o72yZI&list=RDPT84G0xXDlI&index=2
-    Shared link          https://youtu.be/Z2Cs0o72yZI?si=CsyEYxZqkiY2Pf32&t=76
-    timestamp line append '&t=<hours>h<minutes>m<seconds>s'
-'''
+
 PAGELOADTIME = 5
-TRANSCRIPTLOADTIME = 5
+WAIT_TIME_TRANSCRIPT_LOAD = 20
+WAIT_TIME_BUTTON_LOAD = 10
 LOG_DIR = 'nodes'
 
 class TranscriptProcessor:
@@ -66,19 +58,17 @@ class TranscriptProcessor:
         """
         try:
             # Wait until description element is visible
-            WebDriverWait(driver, 10).until(
+            button_description = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
                 EC.presence_of_element_located((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
             )
-            # Use javascript to click desc button
-            driver.execute_script('document.querySelector("#expand").click()')
+            button_description.click()
             # Wait until transcript button is visible
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
+            button_transcript = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
+                EC.presence_of_element_located((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
             )
-            # Use javascript to click transcript button
-            driver.execute_script("document.querySelector(\"ytd-structured-description-content-renderer[id='structured-description'] ytd-video-description-transcript-section-renderer[class='style-scope ytd-structured-description-content-renderer'] div[class='yt-spec-touch-feedback-shape__fill']\").click()")
-            # Wait for transcript elements to load
-            transcript_lines = WebDriverWait(driver, 20).until(
+            button_transcript.click()
+            # Wait for transcript content elements to load
+            transcript_lines = WebDriverWait(driver, WAIT_TIME_TRANSCRIPT_LOAD).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
             )
             # Return transcript lines that contain specified phrase

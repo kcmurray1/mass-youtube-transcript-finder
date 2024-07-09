@@ -16,7 +16,6 @@ def assign_work():
         node = Node()
         if len(sys.argv) > 1:
             node.distribute_work(sys.argv[1])
-        
         run_flask(node)
 
 
