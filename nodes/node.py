@@ -24,6 +24,10 @@ class Node:
         videos = self.transcriber.find_videos(yt_url=url)
         print(f"Found a {len(videos)} total!")
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": num_workers}
+    
+    def non_distributed_work(self):
+        self.is_master = True
+        self.work(self._get_data())
 
     def distribute_work(self, worker_addresses):
         """Send work to nodes across a network
