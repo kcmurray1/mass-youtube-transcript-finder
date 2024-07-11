@@ -17,15 +17,19 @@ def assign_work():
     group.add_argument('-d', '--distr', type=str, help="Comma separated addresses to other machines")
     options, _ = p.parse_known_args()
 
+    # Run Test Suite
     if options.test:
         test()
         return
     node = Node()
+    # Act as main node and distribute work to other machines 
     if options.distr:
-        node.distribute_work(sys.argv[1])
+        node.distribute_work(options.distr)
+        run_flask(node)
+    # Act as main node and do not distribute work
     else:
         node.non_distributed_work()
-    run_flask(node)
+   
 
 
 def test():
