@@ -15,7 +15,7 @@ and cannot be used together.
 - `--distr` <addr_1>,<addr_2>, <addr_3>...: Use this flag to distribute workload among local machines.  
   Machines that run without this flag will wait to receive data to process from a machine that uses this flag.
 ```bash
-python main.py --test | --distr <addr_1>,<addr_2>, <addr_3>
+`python main.py --test | --distr <addr_1>,<addr_2>, <addr_3>`
 ```
 
 ## Selecting a channel to searchs
