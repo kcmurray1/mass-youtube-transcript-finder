@@ -3,10 +3,11 @@ from transcriber.transcript import TranscriptProcessor
 from requests import exceptions
 
 class Node:
-    def __init__(self):
+    def __init__(self, num_threads=4):
         self.is_master = False
         self.master_addr = None
         self.transcriber = TranscriptProcessor()
+        self.num_threads = num_threads
 
     def _get_data(self):
         """Get necessary data to distribute work
@@ -18,12 +19,10 @@ class Node:
         url = None
         if not url:
             url = input("Enter a url: ")
-        
-        num_workers = 4
 
         videos = self.transcriber.find_videos(yt_url=url)
         print(f"Found a {len(videos)} total!")
-        return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": num_workers}
+        return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": self.num_threads}
     
     def non_distributed_work(self):
         self.is_master = True

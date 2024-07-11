@@ -10,8 +10,7 @@ def assign_work():
     """Determine whether to treat this instance as a master or worker node"""
     
     p = argparse.ArgumentParser()
-
-    # https://stackoverflow.com/questions/11154946/require-either-of-two-arguments-using-argparse
+    p.add_argument('--threads', type=int, default=4, help="Number of threads to run")
     group = p.add_mutually_exclusive_group()
     group.add_argument('--test', action='store_true', help="Determine whether to run system test suite")
     group.add_argument('-d', '--distr', type=str, help="Comma separated addresses to other machines")
@@ -21,7 +20,7 @@ def assign_work():
     if options.test:
         test()
         return
-    node = Node()
+    node = Node(options.threads)
     # Act as main node and distribute work to other machines 
     if options.distr:
         node.distribute_work(options.distr)
