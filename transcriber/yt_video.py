@@ -1,9 +1,9 @@
 import time
 class YtVideo:
     def __init__(self, video_info=None, video_url=None, video_author=None, video_title=None):
-        # parse videoInfo: <title> by <author> <views> views Streamed <days> day ago <hours> hours, <minutes> minutes
-        # HAPPY NEW YEAR! Let's wait for 2024 to arrive together~! by Nerissa Ravencroft Ch. hololive-EN 72,223 views Streamed 1 day ago 3 hours, 8 minutes
-        # Search for " by " from the right to handle cases where the video title contains " by "
+        """ parse videoInfo: <title> by <author> <views> views Streamed <days> day ago <hours> hours, <minutes> minutes
+        HAPPY NEW YEAR! Let's wait for 2024 to arrive together~! by Youtube Channel Name 72,223 views Streamed 1 day ago 3 hours, 8 minutes
+        NOTE: Search for ' by ' from the right to handle cases where the video title contains ' by  ' """
         if video_info:
             split_point = video_info.rfind(" by ")
         self.raw = video_info

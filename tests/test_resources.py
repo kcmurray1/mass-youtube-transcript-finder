@@ -18,7 +18,7 @@ class ValidData:
 
     VALID_TRANSCRIBER_TEST_DATA = [ 
     InstanceConfig(channel="jdh", url="https://www.youtube.com/@jdh/videos", phrase="hello", match_count=10, vids=23),
-    InstanceConfig(channel="git-amend", url="https://www.youtube.com/@git-amend/videos", phrase="hello", match_count=10 , vids=69),  
+    InstanceConfig(channel="git-amend", url="https://www.youtube.com/@git-amend/videos", phrase="hello", match_count=10 , vids=70),  
     ]
 
 class InvalidData:
