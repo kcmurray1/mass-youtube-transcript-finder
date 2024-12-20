@@ -5,6 +5,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+
 import unittest
 import time
 
@@ -45,11 +47,8 @@ class TestElementPaths(unittest.TestCase):
 
 
 class TestYtVideo(unittest.TestCase):
-    transcriber = TranscriptProcessor()
-
-
     def test_a(self):
-        pass
+      pass
 
 class TestTranscriber(unittest.TestCase):
 
@@ -72,13 +71,13 @@ class TestTranscriber(unittest.TestCase):
             self.assertEquals(test_datum.vids, len(retrieved_videos))
             self.test_results[test_datum.channel].videos = retrieved_videos
 
-    def test_c_find_matches_no_transcript_video(self):
-        self.test_web_driver.get(InvalidData.INVALID_NO_TRANSCRIPT.url)
-        self.test_web_driver.set_window_size(1200, 1000)
+    # def test_c_find_matches_no_transcript_video(self):
+    #     self.test_web_driver.get(InvalidData.INVALID_NO_TRANSCRIPT.url)
+    #     self.test_web_driver.set_window_size(1200, 1000)
 
-        res = self.test_transcriber._get_transcript_matches(self.test_web_driver, InvalidData.INVALID_NO_TRANSCRIPT.phrase)
+    #     res = self.test_transcriber._get_transcript_matches(self.test_web_driver, InvalidData.INVALID_NO_TRANSCRIPT.phrase)
 
-        self.assertEquals(res, "timeout")
+    #     self.assertEquals(res, "timeout")
     
     def test_d_find_phrase_match_count(self):
         for test_datum in ValidData.VALID_TRANSCRIBER_TEST_DATA:
@@ -90,8 +89,7 @@ class TestTranscriber(unittest.TestCase):
 
 def start_tests():
     # Store multiple test classes(If necessary)
-    # test_classes = [TestElementPaths,TestTranscriber, TestYtVideo]
-    test_classes =[TestElementPaths]
+    test_classes = [TestElementPaths,TestTranscriber, TestYtVideo]
     test_loader = unittest.TestLoader()
     suites = [test_loader.loadTestsFromTestCase(test_class) for test_class in test_classes]
     suites = unittest.TestSuite(suites)

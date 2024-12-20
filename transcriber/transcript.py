@@ -11,7 +11,7 @@ from transcriber.yt_video import YtVideo
 import threading
 import queue
 
-PAGELOADTIME = 5
+PAGELOADTIME = 10
 WAIT_TIME_TRANSCRIPT_LOAD = 20
 WAIT_TIME_BUTTON_LOAD = 10
 LOG_DIR = 'nodes'
@@ -53,24 +53,24 @@ class TranscriptProcessor:
             an empty list if the desired phrase is not found
         Exception:
         TimeoutException: an HTML element did not load in time or does not exist  
-        
-        FIXME: Currently, the timeout times are hard-coded. May want to replace with expressive constants 
         """
         try:
             # Wait until description element is visible
             button_description = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
-                EC.presence_of_element_located((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
+                EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
             )
             button_description.click()
             # Wait until transcript button is visible
             button_transcript = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
-                EC.presence_of_element_located((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
+                EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
             )
+            print("found transcript!")
             button_transcript.click()
             # Wait for transcript content elements to load
             transcript_lines = WebDriverWait(driver, WAIT_TIME_TRANSCRIPT_LOAD).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
             )
+            print("logging...")
             # Return transcript lines that contain specified phrase
             return [match for line in transcript_lines if (match := line.get_dom_attribute("aria-label")) and user_phrase in match.lower()]
         except TimeoutException:
@@ -192,7 +192,7 @@ class TranscriptProcessor:
         driver = webdriver.Chrome()
         driver.get(yt_url)
         # Resize to prevent element rendering issues
-        driver.set_window_size(1200, 1000)
+        # driver.set_window_size(1200, 1000)
         time.sleep(PAGELOADTIME)
 
         # return videos
@@ -243,7 +243,7 @@ class TranscriptProcessor:
         """
         # Open Chromepage dedicated for the worker
         driver_options = webdriver.ChromeOptions()
-        driver_options.add_argument("window-size=1200,1000")
+        # driver_options.add_argument("window-size=1200,1000")
         driver_options.add_argument("mute-audio")
         driver = webdriver.Chrome(options=driver_options)
 
