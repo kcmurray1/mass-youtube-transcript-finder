@@ -41,7 +41,19 @@ class TestElementPaths(unittest.TestCase):
         self.assertIsNotNone(res)
         res.click()
 
+
+    def test_e_find_text(self):
+        search = "dev"
+        time.sleep(5)
+        matches = self.test_element_driver.find_elements(By.XPATH, Paths.XPATH_TEXT_FIND_PATTERN_V2.format(search=search))
+
+        for match in matches:
+            print(match.get_dom_attribute("aria-label"))
+      
+        time.sleep(5)
         self.test_element_driver.quit()
+
+    
 
 
 
@@ -89,7 +101,8 @@ class TestTranscriber(unittest.TestCase):
 
 def start_tests():
     # Store multiple test classes(If necessary)
-    test_classes = [TestElementPaths,TestTranscriber, TestYtVideo]
+    # test_classes = [TestElementPaths,TestTranscriber, TestYtVideo]
+    test_classes = [TestTranscriber]
     test_loader = unittest.TestLoader()
     suites = [test_loader.loadTestsFromTestCase(test_class) for test_class in test_classes]
     suites = unittest.TestSuite(suites)

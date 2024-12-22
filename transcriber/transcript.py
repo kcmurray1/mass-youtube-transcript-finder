@@ -64,13 +64,11 @@ class TranscriptProcessor:
             button_transcript = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
                 EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
             )
-            print("found transcript!")
             button_transcript.click()
             # Wait for transcript content elements to load
             transcript_lines = WebDriverWait(driver, WAIT_TIME_TRANSCRIPT_LOAD).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
             )
-            print("logging...")
             # Return transcript lines that contain specified phrase
             return [match for line in transcript_lines if (match := line.get_dom_attribute("aria-label")) and user_phrase in match.lower()]
         except TimeoutException:
@@ -265,6 +263,8 @@ class TranscriptProcessor:
                 continue
 
         print(f"{id} is DONE!")
+
+        driver.quit()
   
 
     def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
