@@ -73,14 +73,14 @@ class TestTranscriber(unittest.TestCase):
     def test_a_non_youtube_url_video_retrieval_count(self):
         self.test_results[InvalidData.INVALID_GOOGLE_URL.channel] = TestResult()
         retrieved_videos = self.test_transcriber.find_videos(InvalidData.INVALID_GOOGLE_URL.url)
-        self.assertEquals(retrieved_videos, [])
+        self.assertEqual(retrieved_videos, [])
 
 
     def test_b_youtube_url_video_retrieval_count(self):
         for test_datum in ValidData.VALID_TRANSCRIBER_TEST_DATA:
             self.test_results[test_datum.channel] = TestResult()
             retrieved_videos = self.test_transcriber.find_videos(test_datum.url)
-            self.assertEquals(test_datum.vids, len(retrieved_videos))
+            self.assertEqual(test_datum.vids, len(retrieved_videos))
             self.test_results[test_datum.channel].videos = retrieved_videos
 
     # def test_c_find_matches_no_transcript_video(self):
@@ -95,7 +95,7 @@ class TestTranscriber(unittest.TestCase):
         for test_datum in ValidData.VALID_TRANSCRIBER_TEST_DATA:
             test_videos = self.test_results[test_datum.channel].videos
             num_test_matches, num_errors = self.test_transcriber.channel_search(test_videos, author=test_datum.channel, phrase=test_datum.phrase)
-            self.assertAlmostEquals(test_datum.match_count, num_test_matches, delta=3)
+            self.assertAlmostEqual(test_datum.match_count, num_test_matches, delta=3)
 
 
 
