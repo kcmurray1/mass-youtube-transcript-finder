@@ -3,6 +3,7 @@ from nodes.node_flask import run_flask
 from tests.test import start_tests
 import sys
 import argparse
+from flaskr import create_node
 
 
 
@@ -20,14 +21,28 @@ def assign_work():
     if options.test:
         test()
         return
-    node = Node(options.threads)
-    # Act as main node and distribute work to other machines 
-    if options.distr:
-        node.distribute_work(options.distr)
-        run_flask(node)
-    # Act as main node and do not distribute work
-    else:
-        node.non_distributed_work()
+    
+    node = create_node()
+
+    node.run()
+
+    # Create node
+    # node = Node(
+    #     is_master=options.distr != None,
+    #     num_threads=options.threads,
+    #     )
+    # # distribute work
+    # node.distribute_work(options.distr)
+    
+    
+    # node = Node(options.threads)
+    # # Act as main node and distribute work to other machines 
+    # if options.distr:
+    #     node.distribute_work(options.distr)
+    #     run_flask(node)
+    # # Act as main node and do not distribute work
+    # else:
+    #     node.non_distributed_work()
    
 
 

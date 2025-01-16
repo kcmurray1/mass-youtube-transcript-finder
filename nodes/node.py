@@ -1,22 +1,29 @@
 import requests
-from transcriber.transcript import TranscriptProcessor
+# from transcriber.transcript import TranscriptProcessor
 from requests import exceptions
 
+DEBUG_DATA = ["jdh", "https://www.youtube.com/@jdh/videos", "hello"]
+
 class Node:
-    def __init__(self, num_threads=4):
-        self.is_master = False
+    def __init__(self, num_threads=4, is_master=False, worker_list=None):
+        self.is_master = is_master
         self.master_addr = None
+        self.worker_addresses = worker_list
         self.transcriber = TranscriptProcessor()
         self.num_threads = num_threads
+
+
 
     def _get_data(self):
         """Get necessary data to distribute work
         Returns:
             A dictionary containing pertinent data
         """
-        user_author_name = input("Channel name: ")
-        user_phrase = input("Enter a phrase: ")
-        url = None
+        # user_author_name = input("Channel name: ")
+        # user_phrase = input("Enter a phrase: ")
+        user_author_name = DEBUG_DATA[0]
+        user_phrase = DEBUG_DATA[2]
+        url = DEBUG_DATA[1]
         if not url:
             url = input("Enter a url: ")
 
@@ -24,8 +31,38 @@ class Node:
         print(f"Found a {len(videos)} total!")
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": self.num_threads}
     
+    # FIXME: need to implement
+    def run(self):
+        # NOTE: main node distributes work whereas, workers listen for work
+        if(self.is_master):
+            self.distribute_work_v2()
+        # start flask endpoint
+        raise NotImplementedError
+
+    def distribute_work_v2(self):
+        """Send work to nodes across a network"""
+        
+        # Get data to distribute
+        payload = self._get_data()
+
+        # split videos among number of workers including itself
+        video_splits = balance(payload["videos"], len(self.worker_addresses) + 1)
+        for worker_addr in self.worker_addresses:
+            try:
+                video_split = video_splits.pop()
+                payload["videos"] = video_split
+                res = requests.put(f"http://{worker_addr}/process", json=payload)
+                print(res.json())
+            except exceptions.ConnectionError:
+                print(f"could not reach {worker_addr}")
+                video_splits.append(video_split)
+        
+        # Perform work on the remaining data
+        for videos in video_splits:
+            payload["videos"] = videos
+            self.work(payload)
+    
     def non_distributed_work(self):
-        self.is_master = True
         self.work(self._get_data())
 
     def distribute_work(self, worker_addresses):
@@ -34,27 +71,28 @@ class Node:
             worker_addresses: a comma separated string of addresses of machines
             to distribute work to
         """
-        self.is_master = True
         worker_addresses = worker_addresses.split(',')
         
         # Get data to distribute
-        data = self._get_data()
+        payload = self._get_data()
 
         # split videos among number of workers including itself
-        video_split = balance(data["videos"], len(worker_addresses) + 1)
-
+        video_splits = balance(payload["videos"], len(worker_addresses) + 1)
         for worker_addr in worker_addresses:
             try:
-                data["videos"] = video_split.pop()
-                res = requests.put(f"http://{worker_addr}/process", json=data)
+                video_split = video_splits.pop()
+                payload["videos"] = video_split
+                res = requests.put(f"http://{worker_addr}/process", json=payload)
                 print(res.json())
             except exceptions.ConnectionError:
                 print(f"could not reach {worker_addr}")
+                video_splits.append(video_split)
         
         # Perform work on the remaining data
-        for videos in video_split:
-            data["videos"] = videos
-            self.work(data)
+        for videos in video_splits:
+            print(videos, type(videos))
+            payload["videos"] = videos
+            self.work(payload)
 
     def work(self, data):
         """Perform work based on specifications and report to main node
@@ -112,31 +150,54 @@ def balance(a, n):
     a = [1,2,3]
     n = 5
     balance(a,n) = [[1],[2],[3],[],[]]
+
+    NOTE: Remainders are distributed starting from the left to right
+
+    Ex:
+    a = [1,2,3,4,5,6]
+    n = 4
+    The length of 'a' is 6 so 6 % 4 = 2.
+    balance(a,n) = [[1,2],[3,4],[5],[6]]
     """
+    print(f"processing {a}")
     num_items = len(a)
+    
     remainder = num_items % n
+    # Ignore remainder if the number of lists exceeds the number of items to separate
+    # this allows the function to fill most of the lists with at least 1 element
+    if(n > num_items):
+        remainder = 0
 
     split = num_items // n
 
     if not split:
         split = 1
-    
+
+    print(split, remainder, num_items, n)
+
+    # create n sublists
     res = [list() for _ in range(n)]
 
+    # Increment the starting position for every remainder to prevent
+    # overlapping of indices
+    start_offset = 0
     for i in range(n):
-        cur_index = split * i
-        end_index = cur_index + split
         
-        # Ignore remainder if the split is set to 1
-        if remainder and split !=1:
-            end_index = cur_index + split + 1
+        cur_index = split * i + start_offset
+        end_index = cur_index + split
+
+        if(remainder > 0):
+            end_index += 1
             remainder -= 1
+            start_offset += 1
+       
         res[i] += a[cur_index: end_index]
       
-
     return res
 
 # Used to test balance()
 if __name__ == "__main__":
-    arr = [0,1,3]
-    balance(arr, 5)
+    arr = [0, 1, 2, 3, 4, 8, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    a = balance(arr, 20)
+
+    print(a)
