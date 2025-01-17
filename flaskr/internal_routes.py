@@ -26,6 +26,6 @@ def process_data():
 @internal_bp.route('/update', methods=["PUT", "POST"])
 def update_local_data():
     """Update the local data"""
-    node = current_app.config["NODE"]
+    node : Node = current_app.config["NODE"]
     node.update_local_data(request.get_data(as_text=True))
     return make_response({"Result": "Updated"}, 201)

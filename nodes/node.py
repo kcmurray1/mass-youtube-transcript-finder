@@ -52,7 +52,7 @@ class Node:
             try:
                 video_split = video_splits.pop()
                 payload["videos"] = video_split
-                res = requests.put(f"http://{worker_addr}/process", json=payload)
+                res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
                 print(res.json())
             except exceptions.ConnectionError:
                 print(f"could not reach {worker_addr}")
@@ -86,7 +86,7 @@ class Node:
             data: a dict containing metadata necessary for recipient to validate request
         """
         try:
-            requests.post(f"http://{self.master_addr}:5000/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
+            requests.post(f"http://{self.master_addr}:5000/internal/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
         except exceptions.ConnectionError:
             pass
 
