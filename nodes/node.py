@@ -1,5 +1,5 @@
 import requests
-# from transcriber.transcript import TranscriptProcessor
+from transcriber.transcript import TranscriptProcessor
 from requests import exceptions
 
 DEBUG_DATA = ["jdh", "https://www.youtube.com/@jdh/videos", "hello"]
@@ -11,7 +11,8 @@ class Node:
         self.worker_addresses = worker_list
         self.transcriber = TranscriptProcessor()
         self.num_threads = num_threads
-
+        if(is_master and worker_list):
+            self.distribute_work(worker_addresses=self.worker_addresses)
 
 
     def _get_data(self):
@@ -30,37 +31,6 @@ class Node:
         videos = self.transcriber.find_videos(yt_url=url)
         print(f"Found a {len(videos)} total!")
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": self.num_threads}
-    
-    # FIXME: need to implement
-    def run(self):
-        # NOTE: main node distributes work whereas, workers listen for work
-        if(self.is_master):
-            self.distribute_work_v2()
-        # start flask endpoint
-        raise NotImplementedError
-
-    def distribute_work_v2(self):
-        """Send work to nodes across a network"""
-        
-        # Get data to distribute
-        payload = self._get_data()
-
-        # split videos among number of workers including itself
-        video_splits = balance(payload["videos"], len(self.worker_addresses) + 1)
-        for worker_addr in self.worker_addresses:
-            try:
-                video_split = video_splits.pop()
-                payload["videos"] = video_split
-                res = requests.put(f"http://{worker_addr}/process", json=payload)
-                print(res.json())
-            except exceptions.ConnectionError:
-                print(f"could not reach {worker_addr}")
-                video_splits.append(video_split)
-        
-        # Perform work on the remaining data
-        for videos in video_splits:
-            payload["videos"] = videos
-            self.work(payload)
     
     def non_distributed_work(self):
         self.work(self._get_data())

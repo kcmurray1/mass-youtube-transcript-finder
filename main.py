@@ -22,9 +22,13 @@ def assign_work():
         test()
         return
     
-    node = create_node()
+    node = create_node(
+        is_master=options.distr != None,
+        num_threads=options.threads,
+        worker_addr_list=options.distr
+    )
 
-    node.run()
+    node.run(host="0.0.0.0")
 
     # Create node
     # node = Node(
