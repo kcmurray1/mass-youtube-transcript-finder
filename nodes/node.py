@@ -2,6 +2,7 @@ import requests
 from transcriber.transcript import TranscriptProcessor
 from requests import exceptions
 
+# FIXME: currently requests are hard coded to port 5000
 DEBUG_DATA = ["jdh", "https://www.youtube.com/@jdh/videos", "hello"]
 
 class Node:
@@ -18,7 +19,8 @@ class Node:
     def _get_data(self):
         """Get necessary data to distribute work
         Returns:
-            A dictionary containing pertinent data
+            A dictionary containing the data: 
+            {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": self.num_threads}
         """
         # user_author_name = input("Channel name: ")
         # user_phrase = input("Enter a phrase: ")
@@ -31,9 +33,6 @@ class Node:
         videos = self.transcriber.find_videos(yt_url=url)
         print(f"Found a {len(videos)} total!")
         return {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": self.num_threads}
-    
-    def non_distributed_work(self):
-        self.work(self._get_data())
 
     def distribute_work(self, worker_addresses):
         """Send work to nodes across a network

@@ -1,7 +1,4 @@
-from nodes.node import Node
-from nodes.node_flask import run_flask
 from tests.test import start_tests
-import sys
 import argparse
 from flaskr import create_node
 
@@ -19,7 +16,7 @@ def assign_work():
 
     # Run Test Suite
     if options.test:
-        test()
+        start_tests()
         return
     
     node = create_node(
@@ -29,33 +26,6 @@ def assign_work():
     )
 
     node.run(host="0.0.0.0")
-
-    # Create node
-    # node = Node(
-    #     is_master=options.distr != None,
-    #     num_threads=options.threads,
-    #     )
-    # # distribute work
-    # node.distribute_work(options.distr)
-    
-    
-    # node = Node(options.threads)
-    # # Act as main node and distribute work to other machines 
-    # if options.distr:
-    #     node.distribute_work(options.distr)
-    #     run_flask(node)
-    # # Act as main node and do not distribute work
-    # else:
-    #     node.non_distributed_work()
-   
-
-
-def test():
-    start_tests()
-    # node = Node()
-    # node.master_addr = '10.0.0.222'
-    # node.transcriber.current_author = None
-    # node.send_results({'author':'hello'})
 
 if __name__ == "__main__":
     assign_work()
