@@ -1,0 +1,14 @@
+{
+    "default": {
+        "window_size": "window-size=1920,1080",
+        "is_muted": true,
+        "num_threads": 4,
+        "id": "default"
+    },
+    "f41975fbef02ebdfb32adb42f2839844f350e75fad1a3d9ab4304fdf024314d7": {
+        "window_size": "window-size=1920,1080",
+        "is_muted": true,
+        "num_threads": 4,
+        "id": "f41975fbef02ebdfb32adb42f2839844f350e75fad1a3d9ab4304fdf024314d7"
+    }
+}

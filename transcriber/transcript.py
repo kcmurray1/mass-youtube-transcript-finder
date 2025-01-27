@@ -17,7 +17,7 @@ WAIT_TIME_BUTTON_LOAD = 10
 LOG_DIR = 'nodes'
 
 class TranscriptProcessor:
-    def __init__(self):
+    def __init__(self, webdriver_settings : dict):
         self.file_write_lock = threading.Lock()
         self.progress_lock = threading.Lock()
         self.err_write_lock = threading.Lock()
@@ -26,6 +26,17 @@ class TranscriptProcessor:
         self.error_file = None
         self.match_count = 0
         self.error_count = 0
+        self.driver = self._create_web_driver(webdriver_settings)
+
+    def _create_web_driver(self, settings : dict):
+        driver_options = webdriver.ChromeOptions()
+        for setting_key in settings:
+            try:
+                driver_options.add_argument(settings[setting_key])
+            except KeyError:
+                pass
+        driver_options.add_argument("mute-audio")
+        return webdriver.Chrome(options=driver_options) 
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author

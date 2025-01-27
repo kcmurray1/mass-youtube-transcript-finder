@@ -1,20 +1,31 @@
 import requests
 from transcriber.transcript import TranscriptProcessor
 from requests import exceptions
-
+from .utils.hash import generate_hash
+from .utils import config 
+import socket
 # FIXME: currently requests are hard coded to port 5000
 DEBUG_DATA = ["jdh", "https://www.youtube.com/@jdh/videos", "hello"]
 
 class Node:
     def __init__(self, num_threads=4, is_master=False, worker_list=None):
+        self.id = generate_hash(socket.gethostname())
         self.is_master = is_master
         self.master_addr = None
         self.worker_addresses = worker_list
+        self._check_settings()
         self.transcriber = TranscriptProcessor()
         self.num_threads = num_threads
         if(is_master and worker_list):
             self.distribute_work(worker_addresses=self.worker_addresses)
 
+    def _check_settings(self):
+        """Update settings if they do not exist"""
+        settings = config.get_driver_settings(self.id)
+
+        if settings["id"] == "default":
+            settings["id"] = self.id
+            config.update_driver_settings(self.id, settings)
 
     def _get_data(self):
         """Get necessary data to distribute work
