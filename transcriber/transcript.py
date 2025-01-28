@@ -8,7 +8,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
-    InvalidArgumentException
     )
 import threading
 import queue
@@ -32,15 +31,6 @@ class TranscriptProcessor:
         self.error_count = 0
         self.id = id
         self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
-
-    def _get_driver_settings(self, settings : dict):
-        driver_options = webdriver.ChromeOptions()
-        for setting_key in settings:
-            try:
-                driver_options.add_argument(settings[setting_key])
-            except InvalidArgumentException:
-                pass
-        return driver_options
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
