@@ -32,7 +32,7 @@ class WebdriverUtils:
             settings["id"] = id
             # Adjust window size to circumvent issue where element visibility is affected by
             # screen size
-            settings["window_size"] = cls._calculate_window_size()
+            settings["driver_settings"]["window_size"] = cls._calculate_window_size()
        
             
             config.update_driver_settings(id, settings)
