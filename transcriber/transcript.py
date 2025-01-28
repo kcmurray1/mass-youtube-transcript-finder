@@ -1,23 +1,27 @@
-from .paths import Paths
+from transcriber.utils.constants.paths import Paths
 import pyautogui
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
-from transcriber.yt_video import YtVideo
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+    InvalidArgumentException
+    )
 import threading
 import queue
+from transcriber.yt_video import YtVideo
+from transcriber.utils.web_driver_utils import WebdriverUtils
 
 PAGELOADTIME = 10
 WAIT_TIME_TRANSCRIPT_LOAD = 20
 WAIT_TIME_BUTTON_LOAD = 10
-LOG_DIR = 'nodes'
+LOG_DIR = 'node'
 
 class TranscriptProcessor:
-    def __init__(self, webdriver_settings : dict):
+    def __init__(self, id = "default"):
         self.file_write_lock = threading.Lock()
         self.progress_lock = threading.Lock()
         self.err_write_lock = threading.Lock()
@@ -26,17 +30,17 @@ class TranscriptProcessor:
         self.error_file = None
         self.match_count = 0
         self.error_count = 0
-        self.driver = self._create_web_driver(webdriver_settings)
+        self.id = id
+        self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
 
-    def _create_web_driver(self, settings : dict):
+    def _get_driver_settings(self, settings : dict):
         driver_options = webdriver.ChromeOptions()
         for setting_key in settings:
             try:
                 driver_options.add_argument(settings[setting_key])
-            except KeyError:
+            except InvalidArgumentException:
                 pass
-        driver_options.add_argument("mute-audio")
-        return webdriver.Chrome(options=driver_options) 
+        return driver_options
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
@@ -54,7 +58,7 @@ class TranscriptProcessor:
         return True
 
 
-    def _get_transcript_matches(self, driver: webdriver, user_phrase: str):
+    def _get_transcript_matches(self, driver : webdriver, user_phrase: str):
         """Find lines in a transcript that contain the desired phrase
         Args:
             driver: a webdriver, tied to a Youtube video link, whose transcript will be analyzed
@@ -149,7 +153,7 @@ class TranscriptProcessor:
                 # using .join() concats strings in O(n)
                 f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
 
-    def _find_videos(self, driver: webdriver):
+    def _find_videos(self, driver : webdriver):
         """
         Helper to Find all Youtube videos present on a webpage
         Args:
@@ -198,14 +202,12 @@ class TranscriptProcessor:
             A list of Yt_video organized into author, title, and url 
         """
         # open chromepage at starting url
-        driver = webdriver.Chrome()
+        driver = webdriver.Chrome(options=self.driver_settings)
         driver.get(yt_url)
-        # Resize to prevent element rendering issues
-        # driver.set_window_size(1200, 1000)
         time.sleep(PAGELOADTIME)
 
         # return videos
-        videos = self._find_videos(driver)
+        videos = self._find_videos(driver=driver)
         driver.close()
         return videos
 
@@ -254,7 +256,7 @@ class TranscriptProcessor:
         driver_options = webdriver.ChromeOptions()
         # driver_options.add_argument("window-size=1200,1000")
         driver_options.add_argument("mute-audio")
-        driver = webdriver.Chrome(options=driver_options)
+        worker_driver = webdriver.Chrome(options=driver_options)
 
         while True:
             try:
@@ -262,9 +264,9 @@ class TranscriptProcessor:
                 video_to_process = video_queue.get_nowait()
                 # validate video author
                 if self._valid_author(video_to_process.get_author(), user_author_name): 
-                    driver.get(video_to_process.get_url())   
+                    worker_driver.get(video_to_process.get_url())   
                     # Attempt to find a transcript and see if it contains the user's phrase
-                    self._write_matches(self._get_transcript_matches(driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
+                    self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
                 with self.progress_lock:
                     print(f"Queue size: {video_queue.qsize()}", end='\r')
             # Restart work if an uncaught exception is thrown
@@ -275,7 +277,7 @@ class TranscriptProcessor:
 
         print(f"{id} is DONE!")
 
-        driver.quit()
+        worker_driver.quit()
   
 
     def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):

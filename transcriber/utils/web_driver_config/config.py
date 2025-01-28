@@ -1,10 +1,28 @@
 import json
-
-CONFIG_FILE_PATH = "nodes/utils/config.json"
+CONFIG_FILE_PATH = "transcriber/utils/web_driver_config/config.json"
 
 def get_config():
      with open(CONFIG_FILE_PATH, "r") as f:
         return json.load(f)
+
+def get_value(id : str, key : str = None):
+    """Retrieve value from ID in config
+    Returns all data for id if no key provided
+    """
+    if not id or not isinstance(id, str):
+        raise Exception(f"Invalid ID: {id}")
+    
+    with open(CONFIG_FILE_PATH, "r") as f:
+        data = json.load(f)
+    # check if id exists
+        try:
+            if not key:
+                return data[id]
+            return data[id][key]
+        except KeyError:
+            if not key:
+                return data["default"]
+            return data["default"][key]
 
 def get_driver_settings(id : str):
     """Getting webdriver information for specific device by id lookup"""
@@ -12,9 +30,9 @@ def get_driver_settings(id : str):
         data = json.load(f)
     # check if id exists
         try:
-            return data[id]
+            return data[id]["driver_settings"]
         except KeyError:
-            return data["default"]
+            return data["default"]["driver_settings"]
 
 
 def update_driver_settings(id: str, data : dict):

@@ -1,5 +1,5 @@
 from transcriber.transcript import TranscriptProcessor
-from transcriber.paths import Paths
+from transcriber.utils.constants.paths import Paths
 from tests.test_resources import ValidData, InvalidData, TestResult
 from selenium import webdriver
 from selenium.webdriver.common.by import By

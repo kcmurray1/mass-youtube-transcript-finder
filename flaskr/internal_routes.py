@@ -1,6 +1,6 @@
 from flask import make_response, Blueprint, request, current_app
 import threading
-from nodes.node import Node
+from node.node import Node
 internal_bp = Blueprint("internal", __name__, url_prefix="/internal")
 
 
