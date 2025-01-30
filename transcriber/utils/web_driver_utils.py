@@ -42,7 +42,7 @@ class WebdriverUtils:
     @classmethod
     def _calculate_window_size(cls):
         """Adjust window size until """
-        width = 950
+        width = 945
         height = 1018
         driver = webdriver.Chrome()
         while width >= 800:
@@ -51,6 +51,7 @@ class WebdriverUtils:
                 driver.get("https://www.youtube.com/watch?v=GhTAoilsFUs&t=7s")
                 time.sleep(5)
                 driver.find_element(By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION).click()
+                time.sleep(5)
                 break
             except:
                 width -= 50

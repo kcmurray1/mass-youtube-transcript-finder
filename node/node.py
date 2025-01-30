@@ -48,15 +48,15 @@ class Node:
 
         # split videos among number of workers including itself
         video_splits = balance(payload["videos"], len(worker_addresses) + 1)
-        for worker_addr in worker_addresses:
-            try:
-                video_split = video_splits.pop()
-                payload["videos"] = video_split
-                res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
-                print(res.json())
-            except exceptions.ConnectionError:
-                print(f"could not reach {worker_addr}")
-                video_splits.append(video_split)
+        # for worker_addr in worker_addresses:
+        #     try:
+        #         video_split = video_splits.pop()
+        #         payload["videos"] = video_split
+        #         res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
+        #         print(res.json())
+        #     except exceptions.ConnectionError:
+        #         print(f"could not reach {worker_addr}")
+        #         video_splits.append(video_split)
         
         # Perform work on the remaining data
         for videos in video_splits:

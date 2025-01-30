@@ -22,5 +22,13 @@
         },
         "num_threads": 4,
         "id": "ec7dd15279e50e7b15332958adab37582853a4bb09d0a419a70593f49827c7ac"
+    },
+    "2b23711fd183888018c69dd150446471bd7655d3afc177712b48c508b694fcfb": {
+        "driver_settings": {
+            "window_size": "window-size=945,1018",
+            "audio": "mute-audio"
+        },
+        "num_threads": 4,
+        "id": "2b23711fd183888018c69dd150446471bd7655d3afc177712b48c508b694fcfb"
     }
 }

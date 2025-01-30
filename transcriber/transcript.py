@@ -243,10 +243,10 @@ class TranscriptProcessor:
             queue.Empty: No more videos need to be processed
         """
         # Open Chromepage dedicated for the worker
-        driver_options = webdriver.ChromeOptions()
+        # driver_options = webdriver.ChromeOptions()
         # driver_options.add_argument("window-size=1200,1000")
-        driver_options.add_argument("mute-audio")
-        worker_driver = webdriver.Chrome(options=driver_options)
+        # driver_options.add_argument("mute-audio")
+        worker_driver = webdriver.Chrome(options=self.driver_settings)
 
         while True:
             try:
