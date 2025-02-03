@@ -4,7 +4,6 @@ from requests import exceptions
 from node.utils.hash import generate_hash
 import socket
 # FIXME: currently requests are hard coded to port 5000
-DEBUG_DATA = ["jdh", "https://www.youtube.com/@jdh/videos", "hello"]
 
 class Node:
     def __init__(self, num_threads=4, is_master=False, worker_list=None):
@@ -23,13 +22,9 @@ class Node:
             A dictionary containing the data: 
             {"author": user_author_name, "phrase": user_phrase, "videos": videos, "workers": self.num_threads}
         """
-        # user_author_name = input("Channel name: ")
-        # user_phrase = input("Enter a phrase: ")
-        user_author_name = DEBUG_DATA[0]
-        user_phrase = DEBUG_DATA[2]
-        url = DEBUG_DATA[1]
-        if not url:
-            url = input("Enter a url: ")
+        user_author_name = input("Channel name: ")
+        user_phrase = input("Enter a phrase: ")
+        url = input("Enter a url: ")
 
         videos = self.transcriber.find_videos(yt_url=url)
         print(f"Found a {len(videos)} total!")
@@ -48,15 +43,15 @@ class Node:
 
         # split videos among number of workers including itself
         video_splits = balance(payload["videos"], len(worker_addresses) + 1)
-        # for worker_addr in worker_addresses:
-        #     try:
-        #         video_split = video_splits.pop()
-        #         payload["videos"] = video_split
-        #         res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
-        #         print(res.json())
-        #     except exceptions.ConnectionError:
-        #         print(f"could not reach {worker_addr}")
-        #         video_splits.append(video_split)
+        for worker_addr in worker_addresses:
+            try:
+                video_split = video_splits.pop()
+                payload["videos"] = video_split
+                res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
+                print(res.json())
+            except exceptions.ConnectionError:
+                print(f"could not reach {worker_addr}")
+                video_splits.append(video_split)
         
         # Perform work on the remaining data
         for videos in video_splits:
@@ -86,7 +81,7 @@ class Node:
             data: a dict containing metadata necessary for recipient to validate request
         """
         try:
-            requests.post(f"http://{self.master_addr}:5000/internal/update", json=data, files={"file": open(f"nodes/matches_{self.transcriber.current_author}.txt", 'rb')})
+            requests.post(f"http://{self.master_addr}:5000/internal/update", json=data, files={"file": open(f"node/matches_{self.transcriber.current_author}.txt", 'rb')})
         except exceptions.ConnectionError:
             pass
 

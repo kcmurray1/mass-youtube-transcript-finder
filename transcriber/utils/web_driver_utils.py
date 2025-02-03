@@ -6,6 +6,7 @@ from transcriber.utils.constants.paths import Paths
 from transcriber.utils.web_driver_config import config
 
 class WebdriverUtils:
+    """Utilitiy to help create Selenium webdriver instances"""
     @classmethod
     def get_driver_settings(cls, id : str):
         """Retrieve driver settings from web_driver_config file"""
@@ -17,6 +18,7 @@ class WebdriverUtils:
     def _build_options(cls, settings : dict):
         """Return ChromeOptions instance with the provided settings"""
         driver_options = webdriver.ChromeOptions()
+        driver_options.add_argument("")
         for setting_key in settings:
             try:
                 driver_options.add_argument(settings[setting_key])
@@ -27,7 +29,7 @@ class WebdriverUtils:
     @classmethod
     def _verify_settings(cls, id : str): 
         """Update settings if they do not exist"""
-        settings = config.get_value(id)
+        settings = config.read(id)
         if settings["id"] == "default":
             settings["id"] = id
             # Adjust window size to circumvent issue where element visibility is affected by
@@ -35,13 +37,16 @@ class WebdriverUtils:
             settings["driver_settings"]["window_size"] = cls._calculate_window_size()
        
             
-            config.update_driver_settings(id, settings)
+            config.write(id, settings)
         
         return settings["driver_settings"]
     
     @classmethod
     def _calculate_window_size(cls):
-        """Adjust window size until """
+        """Adjust window size until element can be found
+        NOTE: this is used to handle an issue where elements are hidden due to 
+        a device's native screen size
+        """
         width = 945
         height = 1018
         driver = webdriver.Chrome()

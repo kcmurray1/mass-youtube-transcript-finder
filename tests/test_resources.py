@@ -17,7 +17,7 @@ class ValidData:
     VALID_VIDEO_URL = "https://www.youtube.com/watch?v=ZsIEzKRW1BE"
 
     VALID_TRANSCRIBER_TEST_DATA = [ 
-    InstanceConfig(channel="jdh", url="https://www.youtube.com/@jdh/videos", phrase="hello", match_count=10, vids=24),
+    InstanceConfig(channel="jdh", url="https://www.youtube.com/@jdh/videos", phrase="hello", match_count=10, vids=25),
     # InstanceConfig(channel="git-amend", url="https://www.youtube.com/@git-amend/videos", phrase="hello", match_count=10 , vids=70),  
     ]
 

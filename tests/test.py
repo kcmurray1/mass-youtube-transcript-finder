@@ -102,7 +102,7 @@ class TestTranscriber(unittest.TestCase):
 def start_tests():
     # Store multiple test classes(If necessary)
     # test_classes = [TestElementPaths,TestTranscriber, TestYtVideo]
-    test_classes = [TestElementPaths]
+    test_classes = [TestTranscriber]
     test_loader = unittest.TestLoader()
     suites = [test_loader.loadTestsFromTestCase(test_class) for test_class in test_classes]
     suites = unittest.TestSuite(suites)
