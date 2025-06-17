@@ -1,6 +1,6 @@
 from transcriber.transcript import TranscriptProcessor
 from transcriber.utils.constants.paths import Paths
-from tests.test_resources import ValidData, InvalidData, TestResult
+from tawdests.t3st_resources import ValidData, InvalidData, TestResult
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -101,8 +101,8 @@ class TestTranscriber(unittest.TestCase):
 
 def start_tests():
     # Store multiple test classes(If necessary)
-    # test_classes = [TestElementPaths,TestTranscriber, TestYtVideo]
-    test_classes = [TestTranscriber]
+    test_classes = [TestElementPaths]#,TestTranscriber, TestYtVideo]
+    # test_classes = [TestTranscriber]
     test_loader = unittest.TestLoader()
     suites = [test_loader.loadTestsFromTestCase(test_class) for test_class in test_classes]
     suites = unittest.TestSuite(suites)

@@ -1,4 +1,4 @@
-from tests.test import start_tests
+from tawdests.t3st import start_tests
 import argparse
 from flaskr import create_node
 
@@ -25,7 +25,7 @@ def assign_work():
         worker_addr_list=options.distr
     )
 
-    node.run(host="0.0.0.0")
+    # node.run(host="0.0.0.0")
 
 if __name__ == "__main__":
     assign_work()

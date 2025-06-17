@@ -41,23 +41,24 @@ class Node:
         # Get data to distribute
         payload = self._get_data()
 
-        # split videos among number of workers including itself
-        video_splits = balance(payload["videos"], len(worker_addresses) + 1)
-        for worker_addr in worker_addresses:
-            try:
-                video_split = video_splits.pop()
-                payload["videos"] = video_split
-                res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
-                print(res.json())
-            except exceptions.ConnectionError:
-                print(f"could not reach {worker_addr}")
-                video_splits.append(video_split)
+        # # split videos among number of workers including itself
+        # video_splits = balance(payload["videos"], len(worker_addresses) + 1)
+        # for worker_addr in worker_addresses:
+        #     try:
+        #         video_split = video_splits.pop()
+        #         payload["videos"] = video_split
+        #         res = requests.put(f"http://{worker_addr}:5000/internal/process", json=payload)
+        #         print(res.json())
+        #     except exceptions.ConnectionError:
+        #         print(f"could not reach {worker_addr}")
+        #         video_splits.append(video_split)
         
-        # Perform work on the remaining data
-        for videos in video_splits:
-            print(videos, type(videos))
-            payload["videos"] = videos
-            self.work(payload)
+        # # Perform work on the remaining data
+        # for videos in video_splits:
+        #     print(videos, type(videos))
+        #     payload["videos"] = videos
+        #     self.work(payload)
+        self.work(payload)
 
     def work(self, data):
         """Perform work based on specifications and report to main node
@@ -68,6 +69,7 @@ class Node:
 
         # unpack data
         author, phrase, videos, num_threads = data.values()
+        
         self.transcriber.channel_search(videos, num_workers=num_threads, author=author, phrase=phrase)
 
         # Report results to master node

@@ -39,6 +39,7 @@ class TranscriptProcessor:
             user_author: a str from the user specifying the name of the youtube channel(author)
         Returns: a bool that describes whether a a video is authored by specified channel
         """
+        print(f"video_info {video_info}, user_author {user_author}")
         if video_info is None or user_author is None:
             return False
         # Video is not published by desired author
@@ -165,10 +166,13 @@ class TranscriptProcessor:
             print('rendered vids')
             
             videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
+
             
             if videos:
                 # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
                 # return found videos
+                for video in videos:
+                    print(video.get_dom_attribute("aria-label"))
                 return [YtVideo(video.get_dom_attribute("aria-label"), video.get_attribute("href")).as_json() for video in videos]
         except NoSuchElementException:
             playlist_videos = []
@@ -198,6 +202,8 @@ class TranscriptProcessor:
 
         # return videos
         videos = self._find_videos(driver=driver)
+
+
         driver.close()
         return videos
 
@@ -253,10 +259,12 @@ class TranscriptProcessor:
                 # Try to get a video from the queue
                 video_to_process = video_queue.get_nowait()
                 # validate video author
-                if self._valid_author(video_to_process.get_author(), user_author_name): 
-                    worker_driver.get(video_to_process.get_url())   
+                # if self._valid_author(video_to_process.get_author, user_author_name): 
+             
                     # Attempt to find a transcript and see if it contains the user's phrase
-                    self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
+                print(video_to_process.get_url())
+                # self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
+              
                 with self.progress_lock:
                     print(f"Queue size: {video_queue.qsize()}", end='\r')
             # Restart work if an uncaught exception is thrown

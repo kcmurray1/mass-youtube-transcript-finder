@@ -18,7 +18,7 @@ class WebdriverUtils:
     def _build_options(cls, settings : dict):
         """Return ChromeOptions instance with the provided settings"""
         driver_options = webdriver.ChromeOptions()
-        driver_options.add_argument("")
+        # driver_options.add_argument("")
         for setting_key in settings:
             try:
                 driver_options.add_argument(settings[setting_key])

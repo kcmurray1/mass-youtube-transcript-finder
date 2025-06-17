@@ -27,7 +27,7 @@ class YtVideo:
         return self.raw
 
     def print(self):
-        print(f"Title: {self.title}, Author: {self.author}, Url: {self.url}")
+        print(f"Title: {self.title}, Author: {self.author}, Url: {self.url}, raw: {self.raw}")
         
     
 
