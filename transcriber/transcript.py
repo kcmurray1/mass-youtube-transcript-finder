@@ -20,7 +20,7 @@ WAIT_TIME_BUTTON_LOAD = 10
 LOG_DIR = 'node'
 
 class TranscriptProcessor:
-    def __init__(self, id = "default"):
+    def __init__(self, id = "default", driver=None):
         self.file_write_lock = threading.Lock()
         self.progress_lock = threading.Lock()
         self.err_write_lock = threading.Lock()
@@ -30,7 +30,9 @@ class TranscriptProcessor:
         self.match_count = 0
         self.error_count = 0
         self.id = id
-        self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
+        self.driver = driver
+        if not driver:
+            self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
@@ -75,6 +77,7 @@ class TranscriptProcessor:
             transcript_lines = WebDriverWait(driver, WAIT_TIME_TRANSCRIPT_LOAD).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
             )
+         
             # Return transcript lines that contain specified phrase
             return [match for line in transcript_lines if (match := line.get_dom_attribute("aria-label")) and user_phrase in match.lower()]
         except TimeoutException:
@@ -156,14 +159,12 @@ class TranscriptProcessor:
                 it follows different HTML than if the videos are on the basic Youtube channel page. Thus, this
                 exception is used to handle either case
         """
-        print("Finding Videos...")
         # determine if playlist exists
         # NOTE: playlist videos use a different ID than homepage video elements
         try:
             # Render all of the videos 
             self._render_videos(int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0]))
 
-            print('rendered vids')
             
             videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
 
@@ -171,9 +172,7 @@ class TranscriptProcessor:
             if videos:
                 # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
                 # return found videos
-                for video in videos:
-                    print(video.get_dom_attribute("aria-label"))
-                return [YtVideo(video.get_dom_attribute("aria-label"), video.get_attribute("href")).as_json() for video in videos]
+                return [YtVideo(video.get_dom_attribute("aria-label"), video.get_attribute("href")) for video in videos]
         except NoSuchElementException:
             playlist_videos = []
             # Find all playlist videos
@@ -196,10 +195,13 @@ class TranscriptProcessor:
             A list of Yt_video organized into author, title, and url 
         """
         # open chromepage at starting url
-        driver = webdriver.Chrome(options=self.driver_settings)
+        driver = self.driver
+        if not driver:
+            driver = webdriver.Chrome(options=self.driver_settings)
         driver.get(yt_url)
         time.sleep(PAGELOADTIME)
 
+        
         # return videos
         videos = self._find_videos(driver=driver)
 
@@ -262,8 +264,9 @@ class TranscriptProcessor:
                 # if self._valid_author(video_to_process.get_author, user_author_name): 
              
                     # Attempt to find a transcript and see if it contains the user's phrase
-                print(video_to_process.get_url())
-                # self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
+                worker_driver.get(video_to_process.get_url())  
+
+                self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
               
                 with self.progress_lock:
                     print(f"Queue size: {video_queue.qsize()}", end='\r')
@@ -278,7 +281,54 @@ class TranscriptProcessor:
         worker_driver.quit()
   
 
-    def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
+    # def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
+    #     """Given a list of videos, find all videos of a specified author containing a desired phrase 
+    #     Args:
+    #         videos: a list of Yt_video objects to operate on
+    #         num_workers: int for the number of worker threads to run
+    #         author: a str for the name of the youtube channel
+    #         phrase: a str for the phrase to look for  
+    #         video_index: TBD
+    #     """
+    #     if not num_workers or num_workers < 1 or num_workers > 8:
+    #         num_workers = 3
+        
+    #     if not videos:
+    #         print("No videos found!", flush=True)
+    #         return
+    #     # Update class attributes
+    #     self.current_author = author
+    #     self.result_file = f"{LOG_DIR}/matches_{author}.txt"
+    #     self.error_file = f"{LOG_DIR}/error_log.txt"
+    #     print(f"total videos: {len(videos)}")
+    #     with open(self.error_file, "a") as err:
+    #         err.write(f"--{author}--\n")
+    #     # NOTE: queue.Queue() is thread-safe
+    #     video_queue = queue.Queue()
+    #     for video in videos:
+    #         title, yt_author, url = video.values()
+    #         video_queue.put(YtVideo(video_url=url, video_author=yt_author, video_title=title))
+
+    #     # assign work to threads
+    #     print(f"assigning {num_workers} workers")
+    #     id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
+    #     workers = []
+    #     for i in range(num_workers):
+    #         workers.append(threading.Thread(target=self._dispatch_worker, args=(author, phrase, video_queue, id[i])))
+        
+    #     # Start threads
+    #     for worker in workers:
+    #         worker.start()
+    #     # Complete threads
+    #     for worker in workers:
+    #         worker.join()
+       
+    #     counts = [self.match_count, self.error_count]
+    #     self.match_count = 0
+    #     self.error_count = 0
+    #     return counts
+    
+    def channel_search(self, num_workers=None, url=None, author=None, phrase=None):
         """Given a list of videos, find all videos of a specified author containing a desired phrase 
         Args:
             videos: a list of Yt_video objects to operate on
@@ -290,9 +340,7 @@ class TranscriptProcessor:
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
         
-        if not videos:
-            print("No videos found!", flush=True)
-            return
+        videos = self.find_videos(url)
         # Update class attributes
         self.current_author = author
         self.result_file = f"{LOG_DIR}/matches_{author}.txt"
@@ -303,8 +351,7 @@ class TranscriptProcessor:
         # NOTE: queue.Queue() is thread-safe
         video_queue = queue.Queue()
         for video in videos:
-            title, yt_author, url = video.values()
-            video_queue.put(YtVideo(video_url=url, video_author=yt_author, video_title=title))
+            video_queue.put(video)
 
         # assign work to threads
         print(f"assigning {num_workers} workers")
@@ -319,8 +366,6 @@ class TranscriptProcessor:
         # Complete threads
         for worker in workers:
             worker.join()
+   
+      
        
-        counts = [self.match_count, self.error_count]
-        self.match_count = 0
-        self.error_count = 0
-        return counts
