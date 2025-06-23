@@ -5,3 +5,9 @@
 ## 1/17/2024
 - reorganized flask endpoint route from "/" to "/internal"
 - removed old flask implementation
+
+## 6/16/2025
+- Changed testing from Unittest package to Pytest
+- Added Django project for future use of current project
+
+## 6/18/2025

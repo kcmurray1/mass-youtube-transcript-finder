@@ -13,6 +13,7 @@ import threading
 import queue
 from transcriber.yt_video import YtVideo
 from transcriber.utils.web_driver_utils import WebdriverUtils
+from transcriber.youtube_element_utils import YtElementUtils
 
 PAGELOADTIME = 10
 WAIT_TIME_TRANSCRIPT_LOAD = 20
@@ -31,8 +32,8 @@ class TranscriptProcessor:
         self.error_count = 0
         self.id = id
         self.driver = driver
-        if not driver:
-            self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
+        # if not driver:
+        #     self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
 
     def _valid_author(self, video_info: str, user_author: str):
         """Verify video is authored by specified author
@@ -50,7 +51,7 @@ class TranscriptProcessor:
         # Video published by desired author
         return True
 
-
+    
     def _get_transcript_matches(self, driver : webdriver, user_phrase: str):
         """Find lines in a transcript that contain the desired phrase
         Args:
@@ -147,7 +148,7 @@ class TranscriptProcessor:
                 # using .join() concats strings in O(n)
                 f.write(f"Found {len(matches)} matches containing {user_phrase} URL: {url}\n" + "\n".join(matches) + "\n")
 
-    def _find_videos(self, driver : webdriver):
+    def _find_videos(self, driver : webdriver.Chrome):
         """
         Helper to Find all Youtube videos present on a webpage
         Args:
@@ -161,43 +162,46 @@ class TranscriptProcessor:
         """
         # determine if playlist exists
         # NOTE: playlist videos use a different ID than homepage video elements
+        videos = []
         try:
-            # Render all of the videos 
-            self._render_videos(int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0]))
 
-            
+            # NOTE: old way to find video element int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0])
+            # No issues with it, but this information is included when retrieving the channel name
+            _, vid_count = YtElementUtils.get_channel_info(self.current_author, driver)
+            print(f"rendering {vid_count}")
+            self._render_videos(vid_count)
+
+            # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
             videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
 
-            
-            if videos:
-                # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
-                # return found videos
-                return [YtVideo(video.get_dom_attribute("aria-label"), video.get_attribute("href")) for video in videos]
+   
+
         except NoSuchElementException:
-            playlist_videos = []
             # Find all playlist videos
-            for playlist_video_parent in driver.find_elements(By.ID, Paths.ID_PLAYLIST_VIDEO):
-                # Extract the URL and video title
-                playlist_video_url = playlist_video_parent.get_attribute("href")
-                playlist_video_title = playlist_video_parent.find_element(By.ID, Paths.ID_PLAYLIST_VIDEO_TITLE).get_dom_attribute("aria-label")
-                # Add to list as YtVideo object
-                playlist_videos.append(YtVideo(playlist_video_title, playlist_video_url).as_json())
-            # Return videos
-            return playlist_videos
+            videos = driver.find_elements(By.ID, Paths.ID_PLAYLIST_VIDEO)
+
+        except Exception as e:
+            print(f"error finding videos {e}")
+        res = []
+        for video in videos:
+            video_url = video.get_attribute("href")
+
+            res.append(video_url)
+        return res
     
-    def find_videos(self, yt_url):
+    def find_videos(self, yt_url, driver=None):
         """Extract all videos from a youtube webpage
         
         Args:
             yt_url: A string representing the url to open
 
         Returns:
-            A list of Yt_video organized into author, title, and url 
+            A list of video urls
         """
         # open chromepage at starting url
-        driver = self.driver
         if not driver:
-            driver = webdriver.Chrome(options=self.driver_settings)
+            # driver = webdriver.Chrome(options=self.driver_settings)
+            driver = webdriver.Chrome()
         driver.get(yt_url)
         time.sleep(PAGELOADTIME)
 
@@ -205,12 +209,12 @@ class TranscriptProcessor:
         # return videos
         videos = self._find_videos(driver=driver)
 
-
-        driver.close()
+        if not driver:
+            driver.close()
         return videos
 
        
-    def _render_videos(self, video_count: int, debug=None):
+    def _render_videos(self, video_count: int):
         """Scroll to the bottom of a webpage based on the video_count
         Args:
             video_count: an int descripting 
@@ -224,12 +228,6 @@ class TranscriptProcessor:
         pyautogui.hotkey("ctrl", "end")
         time.sleep(3)
 
-        if debug:
-            print(f"scrolling {video_count} times")
-            for _ in range(video_count):
-                pyautogui.hotkey("ctrl", "end")
-                time.sleep(3)
-            return
         # Scroll to the bottom for every additional 30 videos
         if video_count:
             num_bottom_scroll = ((video_count - 30) // 30)
@@ -254,19 +252,21 @@ class TranscriptProcessor:
         # driver_options = webdriver.ChromeOptions()
         # driver_options.add_argument("window-size=1200,1000")
         # driver_options.add_argument("mute-audio")
-        worker_driver = webdriver.Chrome(options=self.driver_settings)
+        # worker_driver = webdriver.Chrome(options=self.driver_settings)
+        
+        worker_driver = webdriver.Chrome()
 
         while True:
             try:
                 # Try to get a video from the queue
-                video_to_process = video_queue.get_nowait()
+                video_url = video_queue.get_nowait()
                 # validate video author
                 # if self._valid_author(video_to_process.get_author, user_author_name): 
              
                     # Attempt to find a transcript and see if it contains the user's phrase
-                worker_driver.get(video_to_process.get_url())  
+                worker_driver.get(video_url)  
 
-                self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_to_process.get_url())
+                self._write_matches(self._get_transcript_matches(worker_driver, user_phrase), user_phrase, user_author_name, video_url)
               
                 with self.progress_lock:
                     print(f"Queue size: {video_queue.qsize()}", end='\r')
@@ -280,53 +280,6 @@ class TranscriptProcessor:
 
         worker_driver.quit()
   
-
-    # def channel_search(self, videos: list, num_workers=None, video_index=None, author=None, phrase=None):
-    #     """Given a list of videos, find all videos of a specified author containing a desired phrase 
-    #     Args:
-    #         videos: a list of Yt_video objects to operate on
-    #         num_workers: int for the number of worker threads to run
-    #         author: a str for the name of the youtube channel
-    #         phrase: a str for the phrase to look for  
-    #         video_index: TBD
-    #     """
-    #     if not num_workers or num_workers < 1 or num_workers > 8:
-    #         num_workers = 3
-        
-    #     if not videos:
-    #         print("No videos found!", flush=True)
-    #         return
-    #     # Update class attributes
-    #     self.current_author = author
-    #     self.result_file = f"{LOG_DIR}/matches_{author}.txt"
-    #     self.error_file = f"{LOG_DIR}/error_log.txt"
-    #     print(f"total videos: {len(videos)}")
-    #     with open(self.error_file, "a") as err:
-    #         err.write(f"--{author}--\n")
-    #     # NOTE: queue.Queue() is thread-safe
-    #     video_queue = queue.Queue()
-    #     for video in videos:
-    #         title, yt_author, url = video.values()
-    #         video_queue.put(YtVideo(video_url=url, video_author=yt_author, video_title=title))
-
-    #     # assign work to threads
-    #     print(f"assigning {num_workers} workers")
-    #     id = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "tenth"]
-    #     workers = []
-    #     for i in range(num_workers):
-    #         workers.append(threading.Thread(target=self._dispatch_worker, args=(author, phrase, video_queue, id[i])))
-        
-    #     # Start threads
-    #     for worker in workers:
-    #         worker.start()
-    #     # Complete threads
-    #     for worker in workers:
-    #         worker.join()
-       
-    #     counts = [self.match_count, self.error_count]
-    #     self.match_count = 0
-    #     self.error_count = 0
-    #     return counts
     
     def channel_search(self, num_workers=None, url=None, author=None, phrase=None):
         """Given a list of videos, find all videos of a specified author containing a desired phrase 
@@ -335,14 +288,14 @@ class TranscriptProcessor:
             num_workers: int for the number of worker threads to run
             author: a str for the name of the youtube channel
             phrase: a str for the phrase to look for  
-            video_index: TBD
         """
         if not num_workers or num_workers < 1 or num_workers > 8:
             num_workers = 3
-        
+        self.current_author = author
+
         videos = self.find_videos(url)
         # Update class attributes
-        self.current_author = author
+ 
         self.result_file = f"{LOG_DIR}/matches_{author}.txt"
         self.error_file = f"{LOG_DIR}/error_log.txt"
         print(f"total videos: {len(videos)}")

@@ -62,7 +62,8 @@ def test_get_video_element(test_channel):
 
 
 
-
+# NOTE: Previous test may interfere with the upcoming tests. Appears to be
+# An issue related to Selenium webdriver changing focus between windows?
 def test_render_videos_from_video_count(test_channel, transcriber : TranscriptProcessor):
 
     channel, driver = test_channel
@@ -78,14 +79,22 @@ def test_render_videos_from_video_count(test_channel, transcriber : TranscriptPr
 
 
 def test_transcriber_find_videos_from_channel_url(test_channel, transcriber : TranscriptProcessor):
-    channel, _ = test_channel
+    channel, driver = test_channel
 
-    videos = transcriber.find_videos(channel.url)
+    videos = transcriber.find_videos(channel.url, driver=driver)
     
     assert len(videos) == channel.video_count
 
 
-    # videos = transcriber.find_videos(channel.playlist_url)
+def test_transcriber_find_videos_from_playlist_url(test_channel, transcriber : TranscriptProcessor):
+    channel, driver = test_channel
+    videos = transcriber.find_videos(channel.playlist_url, driver=driver)
 
-    # assert len(videos) == channel.playlist_video_count
+    assert len(videos) == channel.playlist_video_count
 
+def test_transcriber_find_videos_invalid_url(test_channel, transcriber : TranscriptProcessor):
+    _, driver = test_channel
+
+    videos = transcriber.find_videos('https://www.youtube.com/watch?v=5Gk_0jLrOM8', driver=driver)
+
+    assert len(videos) == 0
