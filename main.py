@@ -1,7 +1,21 @@
-from tawdests.t3st import start_tests
+
 import argparse
 from flaskr import create_node
 
+
+
+from selenium import webdriver
+
+def main():
+    driver = webdriver.Chrome()
+
+    # Wait for user input before closing
+    while(input("Browser open. Inspect manually and press Enter to continue...") != 'quit'):
+        driver.get('https://www.youtube.com/watch?v=XhluFjFAo4E')
+        driver.delete_all_cookies()
+
+    # Now continue your script or close the driver
+    driver.quit()
 
 
 def assign_work():
@@ -16,7 +30,7 @@ def assign_work():
 
     # Run Test Suite
     if options.test:
-        start_tests()
+    
         return
     
     node = create_node(
@@ -28,4 +42,5 @@ def assign_work():
     # node.run(host="0.0.0.0")
 
 if __name__ == "__main__":
-    assign_work()
+    main()
+    # assign_work()

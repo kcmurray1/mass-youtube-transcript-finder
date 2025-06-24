@@ -35,21 +35,6 @@ class TranscriptProcessor:
         # if not driver:
         #     self.driver_settings = WebdriverUtils.get_driver_settings(self.id)
 
-    def _valid_author(self, video_info: str, user_author: str):
-        """Verify video is authored by specified author
-        Args:
-            videoInfo: a str following the format 'by <author> <num views> views Streamed <publish date>
-            user_author: a str from the user specifying the name of the youtube channel(author)
-        Returns: a bool that describes whether a a video is authored by specified channel
-        """
-        print(f"video_info {video_info}, user_author {user_author}")
-        if video_info is None or user_author is None:
-            return False
-        # Video is not published by desired author
-        if video_info.lower().find(user_author.lower()) == -1:
-            return False
-        # Video published by desired author
-        return True
 
     
     def _get_transcript_matches(self, driver : webdriver, user_phrase: str):
@@ -154,7 +139,7 @@ class TranscriptProcessor:
         Args:
             driver: a webdriver tied to a url containing at least 1 youtube video
         Returns:
-            a list of YTVideo objects 
+            a list of urls
         Exception:
             NoSuchElementException: The desired videos to analyze could be in a Youtube playlist; moreover,
                 it follows different HTML than if the videos are on the basic Youtube channel page. Thus, this
@@ -174,12 +159,9 @@ class TranscriptProcessor:
             # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
             videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
 
-   
-
         except NoSuchElementException:
             # Find all playlist videos
             videos = driver.find_elements(By.ID, Paths.ID_PLAYLIST_VIDEO)
-
         except Exception as e:
             print(f"error finding videos {e}")
         res = []
@@ -260,8 +242,6 @@ class TranscriptProcessor:
             try:
                 # Try to get a video from the queue
                 video_url = video_queue.get_nowait()
-                # validate video author
-                # if self._valid_author(video_to_process.get_author, user_author_name): 
              
                     # Attempt to find a transcript and see if it contains the user's phrase
                 worker_driver.get(video_url)  
@@ -279,6 +259,7 @@ class TranscriptProcessor:
         print(f"{id} is DONE!")
 
         worker_driver.quit()
+
   
     
     def channel_search(self, num_workers=None, url=None, author=None, phrase=None):

@@ -13,7 +13,7 @@ REGEX_DATE_STR = r'\w{3} \d+, \d{4}'
 class YtElementUtils:
     def get_channel_info(user_entered_owner, driver):
         "Compare name with the official name found on the homepage"
-        upload_info = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'page-header')))
+        upload_info = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'page-header')))
 
 
         x = upload_info.find_element(By.TAG_NAME, "yt-content-metadata-view-model")
@@ -41,7 +41,10 @@ class YtElementUtils:
 
         upload_date = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'info-container'))).text
 
-        title = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'title'))).text
+        title = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'above-the-fold')))
+        title = title.find_element(By.ID, "title").text
+        
+
 
      
         date = re.search(REGEX_DATE_STR, upload_date.strip())
@@ -50,7 +53,9 @@ class YtElementUtils:
 
         uploader = upload_info.text.split('\n')[0]
 
-        print(url, title, date, uploader)
+        print(url, title, "//", date.date(), uploader)
+
+        return url, title, date, uploader
 
 
     
