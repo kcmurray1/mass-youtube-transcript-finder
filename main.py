@@ -2,8 +2,6 @@
 import argparse
 from flaskr import create_node
 
-
-
 from selenium import webdriver
 
 def main():
@@ -17,6 +15,9 @@ def main():
     # Now continue your script or close the driver
     driver.quit()
 
+
+
+   
 
 def assign_work():
     """Determine whether to treat this instance as a master or worker node"""
