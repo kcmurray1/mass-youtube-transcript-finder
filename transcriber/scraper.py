@@ -56,7 +56,8 @@ class Scraper:
 
             # NOTE: old way to find video element int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0])
             # No issues with it, but this information is included when retrieving the channel name
-            _, vid_count = YtElementUtils.get_channel_info(author, driver)
+            # _, vid_count = YtElementUtils.get_channel_info(author, driver)
+            vid_count = 500
             print(f"rendering {vid_count}")
             Scraper._render_videos(vid_count)
 
@@ -102,13 +103,14 @@ class Scraper:
             print("no video_count: ", video_count, flush=True)
 
     
-    def get_transcript(driver : webdriver.Chrome):
+    def get_transcript(driver : webdriver.Chrome, ignore_desc_btn=False):
         try:
-            # Wait until description element is visible
-            button_description = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
+            if not ignore_desc_btn:
+                # Wait until description element is visible
+                button_description = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
                 EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
-            )
-            button_description.click()
+                )
+                button_description.click()
             # Wait until transcript button is visible
             button_transcript = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
                 EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))

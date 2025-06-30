@@ -1,10 +1,5 @@
 import pytest
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from transcriber.transcript import TranscriptProcessor
-from transcriber.utils.constants.paths import Paths
 from transcriber.youtube_element_utils import YtElementUtils
 
 class Channel:
@@ -31,15 +26,10 @@ def driver():
 
     test_driver.quit()
 
-
-@pytest.fixture(scope='session')
-def transcriber(driver):
-    yield TranscriptProcessor(driver=driver)
-
 @pytest.fixture(autouse=True)
-def reset_driver_state(transcriber : TranscriptProcessor):
+def reset_driver_state(driver):
     # This runs before every test automatically
-    transcriber.driver.delete_all_cookies()
+    driver.delete_all_cookies()
 
 @pytest.fixture
 def TestResources():
@@ -53,20 +43,20 @@ def TestResources():
         url='https://www.youtube.com/watch?v=XhluFjFAo4E'
     )
 
-def test_get_elements_from_homepage(transcriber, TestResources):
+def test_get_elements_from_homepage(TestResources, driver):
     channel, _ = TestResources
-    transcriber.current_author = channel.owner
-    transcriber.driver.get(channel.channel_url)
-    owner, vids = YtElementUtils.get_channel_info(channel.owner, driver=transcriber.driver)
+
+    driver.get(channel.channel_url)
+    owner, vids = YtElementUtils.get_channel_info(channel.owner, driver)
     
     assert owner is not None
     assert isinstance(vids, int)
 
-def test_get_elements_from_video(transcriber, TestResources):
+def test_get_elements_from_video(TestResources, driver):
     _, video = TestResources
-    transcriber.driver.get(video.url)
+    driver.get(video.url)
     
-    url, title, date, owner = YtElementUtils.get_video_information(transcriber.driver)
+    url, title, date, owner = YtElementUtils.get_video_information(driver)
 
     assert video.title == title
     assert video.upload_date == str(date.date())

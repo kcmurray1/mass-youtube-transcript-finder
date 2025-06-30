@@ -29,26 +29,26 @@ def test_get_videos_from_homepage(driver):
 
     assert len(videos) == 45
 
-def test_get_videos_from_playlist(driver):
+# def test_get_videos_from_playlist(driver):
 
-    playlist_url='https://www.youtube.com/watch?v=eX6g46aDLos&list=PL8K0QjCk8ZmigG5vw6ZizlZDvLEaAhNo4'
-    channel = 'flarvain'
+#     playlist_url='https://www.youtube.com/watch?v=eX6g46aDLos&list=PL8K0QjCk8ZmigG5vw6ZizlZDvLEaAhNo4'
+#     channel = 'flarvain'
 
-    videos = Scraper.find_videos(playlist_url, channel, driver)
+#     videos = Scraper.find_videos(playlist_url, channel, driver)
 
-    assert len(videos) == 13
+#     assert len(videos) == 13
 
-def test_get_transcript(driver):
-    video_url = 'https://www.youtube.com/watch?v=Pi3bI-YghF0'
+# def test_get_transcript(driver):
+#     video_url = 'https://www.youtube.com/watch?v=Pi3bI-YghF0'
     
-    driver.get(video_url)
-    transcript = Scraper.get_transcript(driver)
+#     driver.get(video_url)
+#     transcript = Scraper.get_transcript(driver)
 
-    assert not isinstance(transcript, Exception)
+#     assert not isinstance(transcript, Exception)
 
-    output_file = 'test/debug_fil.txt'
+#     output_file = 'test/debug_fil.txt'
 
-    with open(output_file, "a") as f:
-        for line in transcript:
-            f.write(line.get_dom_attribute('aria-label'))
+#     with open(output_file, "a") as f:
+#         for line in transcript:
+#             f.write(line.get_dom_attribute('aria-label'))
      

@@ -83,7 +83,7 @@ load_dotenv()
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'transcript_finder_db',
+        'NAME': os.getenv('DEV_DB'),
         'USER': 'root',
         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
         'HOST': 'localhost',

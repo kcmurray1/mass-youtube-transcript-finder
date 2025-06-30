@@ -13,7 +13,7 @@ REGEX_DATE_STR = r'\w{3} \d+, \d{4}'
 class YtElementUtils:
     def get_channel_info(user_entered_owner, driver):
         "Compare name with the official name found on the homepage"
-        upload_info = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'page-header')))
+        upload_info = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'page-header')))
 
 
         x = upload_info.find_element(By.TAG_NAME, "yt-content-metadata-view-model")
@@ -21,6 +21,7 @@ class YtElementUtils:
         owner = x[0].lower().lstrip('@')
         vids = x[-1].split(' ')[0]
 
+        print('found', owner, 'videos', len(vids))
         if user_entered_owner in owner:
             return owner, int(vids)
         return None, None
@@ -38,7 +39,7 @@ class YtElementUtils:
             )
         button_description.click()
 
-
+        # Requires desc button to be expanded
         upload_date = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'info-container'))).text
 
         title = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'above-the-fold')))

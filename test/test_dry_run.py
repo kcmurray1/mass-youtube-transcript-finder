@@ -1,7 +1,7 @@
 import pytest
 from transcriber.transcript import TranscriptProcessor
 
-from transcriber.logger import Logger
+from transcriber.logger import LocalLogger
 from functools import partial
 
 from transcriber.screaper_threaded import ScraperThreaded
@@ -19,16 +19,24 @@ from transcriber.screaper_threaded import ScraperThreaded
 #     transcriber.channel_search(author='jdh', url=homepage_url, num_workers=4, phrase="hello")
 
 
-
+from selenium import webdriver
+from transcriber.scraper import Scraper
 
 def test_new_implementation():
         def dummy(transcript, phrase):    
             return "\n".join([match for line in transcript if (match := line.get_dom_attribute("aria-label")) and phrase in match.lower()])
-        
-        dummy_with_phrase = partial(dummy, phrase="this")
-        num_workers = 2
-        url = 'https://www.youtube.com/@jdh/videos'
-        l = Logger(filepath='matches.txt', error_filepath='error_log.txt',dir='test')
 
-        ScraperThreaded.get_transcripts(url=url, author='jdh', log=l, transcript_op=dummy_with_phrase, num_workers=num_workers)
+        url = ''
+        
+        main_driver = webdriver.Chrome()
+        videos = Scraper.find_videos(url, author='', driver=main_driver)
+        main_driver.quit()
+        videos = videos[:500]
+        
+        dummy_with_phrase = partial(dummy, phrase="")
+        num_workers = 4
+
+        l = LocalLogger(filepath='matches.txt', error_filepath='error_log.txt',dir='test')
+
+        ScraperThreaded.get_transcripts(videos=videos, author='', log=l, transcript_op=dummy_with_phrase, num_workers=num_workers)
       
