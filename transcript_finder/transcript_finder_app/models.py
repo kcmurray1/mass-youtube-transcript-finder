@@ -7,7 +7,7 @@ class Channel(models.Model):
 class Video(models.Model):
     url = models.CharField(max_length=100)
     title = models.CharField(max_length=100)
-
+    date = models.DateField(null=True)
     channel = models.ForeignKey(
         Channel,
         on_delete=models.CASCADE,

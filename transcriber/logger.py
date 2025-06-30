@@ -31,14 +31,24 @@ class DBLogger(Logger):
             self.conn.commit()
         return channel_id 
 
-    def log_video(self, channel_id, url, title):
-        self.cursor.execute(f"INSERT INTO transcript_finder_app_video(url, title, channel_id) VALUES ('{url}', '{title}', '{channel_id}')")
+    def log_video(self, channel_id, url, title, date):
+        query = "INSERT INTO transcript_finder_app_video(url, title, channel_id, date) VALUES (%s, %s, %s, %s)"
+        if isinstance(channel_id, tuple):
+            channel_id = channel_id[0]
+        self.cursor.execute(query, (url, title, channel_id, date))
       
         self.conn.commit()
         return self.cursor.lastrowid
     
     def log_transcript(self, video_id, transcript):
-        raise NotImplementedError
+        query = "INSERT INTO transcript_finder_app_transcript (transcript, video_id) VALUES (%s, %s)"
+        self.cursor.execute(query, (transcript, video_id))
+
+        self.conn.commit()
+
+
+
+        
 
 
 class LocalLogger(Logger):

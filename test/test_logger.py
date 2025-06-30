@@ -31,7 +31,8 @@ from transcriber.scraper import Scraper
 
 def test_log_from_scraper():
     driver = webdriver.Chrome()
-    driver.get('https://www.youtube.com/watch?v=WZ3h-9ht_1c')
+    url = 'https://www.youtube.com/watch?v=WZ3h-9ht_1c'
+    driver.get(url)
     # Get video information from url
     
     home_channel_url, title, date, uploader = YtElementUtils.get_video_information(driver)
@@ -42,8 +43,22 @@ def test_log_from_scraper():
 
     def default_transcript(transcript):
         return "\n".join([line.get_dom_attribute("aria-label") for line in transcript])
+    load_dotenv()
+    conn = mysql.connector.connect(
+        database=os.getenv('DEV_DB'),
+        user=os.getenv('USER'),
+        password=os.getenv('MYSQL_PASSWORD'),
+        host='localhost'
+    )
+    db = DBLogger(conn)
+    channel_id = db.log_channel(uploader)
     
+    video_id = db.log_video(channel_id, url, title, date)
+
+    db.log_transcript(video_id, default_transcript(transcript))
+    conn.close()
     
+
     # log into database
 
 # def test_insert_db():
