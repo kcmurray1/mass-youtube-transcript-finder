@@ -1,7 +1,5 @@
-from selenium import webdriver
 import queue
 import threading
-from transcriber.scraper import Scraper
 from transcriber.scraperworker import ScraperWorker
 from transcriber.logger import Logger
 
@@ -29,7 +27,7 @@ class ScraperThreaded:
         workers = []
         for i in range(num_workers):
             new_worker = ScraperWorker(id=i, logger=log)
-            workers.append(threading.Thread(target=new_worker.get_transcript_v2, args=(video_queue, ScraperWorker.basic_video_handler, transcript_op)))
+            workers.append(threading.Thread(target=new_worker.get_transcript_v2, args=(video_queue, ScraperWorker.write_to_db, transcript_op)))
         
         # Start threads
         for worker in workers:

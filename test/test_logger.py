@@ -1,5 +1,5 @@
 import pytest
-import mysql.connector
+ 
 import os
 from selenium import webdriver
 from dotenv import load_dotenv

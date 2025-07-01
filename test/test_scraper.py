@@ -1,11 +1,6 @@
 import pytest
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from transcriber.scraper import Scraper
-from transcriber.utils.constants.paths import Paths
-from transcriber.youtube_element_utils import YtElementUtils
 
 
 
@@ -52,3 +47,4 @@ def test_get_videos_from_homepage(driver):
 #         for line in transcript:
 #             f.write(line.get_dom_attribute('aria-label'))
      
+
