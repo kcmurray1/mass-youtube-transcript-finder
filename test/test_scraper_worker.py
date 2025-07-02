@@ -2,7 +2,6 @@ import pytest
 from selenium import webdriver
 from transcriber.scraperworker import ScraperWorker
 from transcriber.logger import Logger,  DBLogger
-from transcriber.youtube_element_utils import YtElementUtils
 from transcriber.scraper import Scraper
 import os
 from dotenv import load_dotenv
@@ -38,7 +37,7 @@ def test_write_to_db():
 
     def write_to_db(driver, video_url, db_logger, transcript_op):
         driver.get(video_url)  
-        home_channel_url, title, date, uploader = YtElementUtils.get_video_information(driver)
+        home_channel_url, title, date, uploader = Scraper.get_video_information(driver)
     
  
         # get transcript from url  

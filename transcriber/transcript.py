@@ -11,7 +11,6 @@ from selenium.common.exceptions import (
     )
 import threading
 import queue
-from transcriber.yt_video import YtVideo
 from transcriber.utils.web_driver_utils import WebdriverUtils
 from transcriber.youtube_element_utils import YtElementUtils
 

@@ -5,7 +5,7 @@ class Channel(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
 class Video(models.Model):
-    url = models.CharField(max_length=100)
+    url = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=100)
     date = models.DateField(null=True)
     channel = models.ForeignKey(

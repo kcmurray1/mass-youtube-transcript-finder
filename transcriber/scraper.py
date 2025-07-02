@@ -1,20 +1,16 @@
 from transcriber.utils.constants.paths import Paths
-import pyautogui
 import time
+from datetime import datetime
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    TimeoutException,
-    )
-from transcriber.youtube_element_utils import YtElementUtils
-
+import re
+from transcriber.static_page import StaticPage
+from transcriber.dynamic_page import DynamicPage
+REGEX_DATE_STR = r'\w{3} \d+, \d{4}'
 
 PAGELOADTIME = 10
-WAIT_TIME_TRANSCRIPT_LOAD = 20
-WAIT_TIME_BUTTON_LOAD = 10
 
 class Scraper:
 
@@ -56,10 +52,9 @@ class Scraper:
 
             # NOTE: old way to find video element int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0])
             # No issues with it, but this information is included when retrieving the channel name
-            # _, vid_count = YtElementUtils.get_channel_info(author, driver)
-            vid_count = 500
+            _, vid_count = StaticPage.get_channel_info(author, driver)
             print(f"rendering {vid_count}")
-            Scraper._render_videos(vid_count)
+            DynamicPage.scroll_to_bottom(vid_count)
 
             # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
             videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
@@ -77,78 +72,110 @@ class Scraper:
             res.append(video_url)
 
         return res
-
-    def _render_videos(video_count: int):
-        """Scroll to the bottom of a webpage based on the video_count
-        Args:
-            video_count: an int descripting 
-        NOTE: Youtube initially renders 30 videos.
-            Performing bottom scroll renders up to an additional 30 videos(if present).
-        """
-        print("rendering videos...")
-
-        # Perform one scroll to the bottom of the webpage to handle
-        # A bug where prescence of video elements are obscured by Chrome pop-ups
-        pyautogui.hotkey("ctrl", "end")
-        time.sleep(3)
-
-        # Scroll to the bottom for every additional 30 videos
-        if video_count:
-            num_bottom_scroll = ((video_count - 30) // 30)
-            print(f"scrolling {num_bottom_scroll} times")
-            for _ in range(num_bottom_scroll):
-                pyautogui.hotkey("ctrl", "end")
-                time.sleep(3)
-        else:
-            print("no video_count: ", video_count, flush=True)
-
     
-    def get_transcript(driver : webdriver.Chrome, ignore_desc_btn=False):
-        try:
-            if not ignore_desc_btn:
-                # Wait until description element is visible
-                button_description = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
+    def get_video_information(driver : webdriver):
+        print('getting video info')
+        upload_info = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'owner')))
+
+
+        url = upload_info.find_element(By.TAG_NAME, "a").get_attribute("href")
+
+        button_description = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
-                )
-                button_description.click()
-            # Wait until transcript button is visible
-            button_transcript = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
-                EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
             )
-            button_transcript.click()
-            # Wait for transcript content elements to load
-            transcript_lines = WebDriverWait(driver, WAIT_TIME_TRANSCRIPT_LOAD).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
-            )
+        button_description.click()
+
+        # Requires desc button to be expanded
+        upload_date = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'info-container'))).text
+
+        title = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'above-the-fold')))
+        title = title.find_element(By.ID, "title").text
+        
+
+
+        
+        date = re.search(REGEX_DATE_STR, upload_date.strip())
+
+        date = datetime.strptime(date.group(),"%b %d, %Y")
+
+        uploader = upload_info.text.split('\n')[0]
+
+        print(url, title, "//", date.date(), uploader)
+
+        return url, title, date, uploader
+
+
+    # def _render_videos(video_count: int):
+    #     """Scroll to the bottom of a webpage based on the video_count
+    #     Args:
+    #         video_count: an int descripting 
+    #     NOTE: Youtube initially renders 30 videos.
+    #         Performing bottom scroll renders up to an additional 30 videos(if present).
+    #     """
+    #     print("rendering videos...")
+
+    #     # Perform one scroll to the bottom of the webpage to handle
+    #     # A bug where prescence of video elements are obscured by Chrome pop-ups
+    #     pyautogui.hotkey("ctrl", "end")
+    #     time.sleep(3)
+
+    #     # Scroll to the bottom for every additional 30 videos
+    #     if video_count:
+    #         num_bottom_scroll = ((video_count - 30) // 30)
+    #         print(f"scrolling {num_bottom_scroll} times")
+    #         for _ in range(num_bottom_scroll):
+    #             pyautogui.hotkey("ctrl", "end")
+    #             time.sleep(3)
+    #     else:
+    #         print("no video_count: ", video_count, flush=True)
+
+    
+    # def get_transcript(driver : webdriver.Chrome, ignore_desc_btn=False):
+    #     try:
+    #         if not ignore_desc_btn:
+    #             # Wait until description element is visible
+    #             button_description = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
+    #             EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_DESCRIPTION))         
+    #             )
+    #             button_description.click()
+    #         # Wait until transcript button is visible
+    #         button_transcript = WebDriverWait(driver, WAIT_TIME_BUTTON_LOAD).until(
+    #             EC.element_to_be_clickable((By.XPATH, Paths.XPATH_BUTTON_TRANSCRIPT))
+    #         )
+    #         button_transcript.click()
+    #         # Wait for transcript content elements to load
+    #         transcript_lines = WebDriverWait(driver, WAIT_TIME_TRANSCRIPT_LOAD).until(
+    #             EC.presence_of_all_elements_located((By.CSS_SELECTOR, Paths.CSS_TEXT_TRANSCRIPT))
+    #         )
          
-            # Return transcript lines that contain specified phrase
-            return transcript_lines
-        except Exception as e:
-            return e    
+    #         # Return transcript lines that contain specified phrase
+    #         return transcript_lines
+    #     except Exception as e:
+    #         return e    
     
 
-    # Format url to include timestamp, so when it is clicked it jumps to the time
-    # Adding timestamps to urls follow the format <url>&t=<hours>h<minutes>m<seconds>s
-    # NOTE: unsused
-    def add_timestamp_to_url(url, unformatted_time_info):
-        if not unformatted_time_info:
-            return
-        # All unformatted time_info follows the format(oxymoronic):
-        # <num_hours> hours, <num_minutes> minutes, <num_seconds> seconds <text>
-        # Thus, split by spaces and filter hours, minutes, and seconds
-        words = unformatted_time_info.split()
-        # Amass a list to perform linear time join at end
-        timestampUrl = [url, '&t=']
-        # Iterate from the left of the information to glean timestamp values
-        for index, word in enumerate(words):
-            if 'hour' in word:
-                timestampUrl.append(''.join([words[index - 1], "h"]))
-            if 'minute' in word:
-                timestampUrl.append(''.join([words[index - 1], "m"]))
-            if 'second' in word:
-                timestampUrl.append(''.join([words[index - 1], "s"]))
-                break
+    # # Format url to include timestamp, so when it is clicked it jumps to the time
+    # # Adding timestamps to urls follow the format <url>&t=<hours>h<minutes>m<seconds>s
+    # # NOTE: unsused
+    # def add_timestamp_to_url(url, unformatted_time_info):
+    #     if not unformatted_time_info:
+    #         return
+    #     # All unformatted time_info follows the format(oxymoronic):
+    #     # <num_hours> hours, <num_minutes> minutes, <num_seconds> seconds <text>
+    #     # Thus, split by spaces and filter hours, minutes, and seconds
+    #     words = unformatted_time_info.split()
+    #     # Amass a list to perform linear time join at end
+    #     timestampUrl = [url, '&t=']
+    #     # Iterate from the left of the information to glean timestamp values
+    #     for index, word in enumerate(words):
+    #         if 'hour' in word:
+    #             timestampUrl.append(''.join([words[index - 1], "h"]))
+    #         if 'minute' in word:
+    #             timestampUrl.append(''.join([words[index - 1], "m"]))
+    #         if 'second' in word:
+    #             timestampUrl.append(''.join([words[index - 1], "s"]))
+    #             break
         
-        # Return url containing timestamp
-        return ''.join(timestampUrl)
+    #     # Return url containing timestamp
+    #     return ''.join(timestampUrl)
     

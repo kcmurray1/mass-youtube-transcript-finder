@@ -6,7 +6,6 @@ from functools import partial
 
 from transcriber.screaper_threaded import ScraperThreaded
 
-from transcriber.youtube_element_utils import YtElementUtils
 from transcriber.scraper import Scraper
 from transcriber.scraperworker import ScraperWorker
 import os
@@ -30,7 +29,6 @@ import queue
 
 
 from selenium import webdriver
-from transcriber.scraper import Scraper
 
 # def test_new_implementation():
 #         def dummy(transcript, phrase):    
@@ -52,12 +50,12 @@ from transcriber.scraper import Scraper
 
 def test_db_implementation():
 
-    url = ''
+    url = 'https://www.youtube.com/@Flarvain/videos'
     
     main_driver = webdriver.Chrome()
-    videos = Scraper.find_videos(url, author='LeeandLie', driver=main_driver)
+    videos = Scraper.find_videos(url, author='flarvain', driver=main_driver)
     main_driver.quit()
-    videos = videos[:500]
+
     
 
     num_workers = 4

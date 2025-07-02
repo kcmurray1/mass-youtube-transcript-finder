@@ -1,6 +1,6 @@
 import pytest
 from selenium import webdriver
-from transcriber.youtube_element_utils import YtElementUtils
+from transcriber.scraper import Scraper
 
 class Channel:
     def __init__(self, owner, channel_url, video_count):
@@ -47,7 +47,7 @@ def test_get_elements_from_homepage(TestResources, driver):
     channel, _ = TestResources
 
     driver.get(channel.channel_url)
-    owner, vids = YtElementUtils.get_channel_info(channel.owner, driver)
+    owner, vids = Scraper.get_channel_info(channel.owner, driver)
     
     assert owner is not None
     assert isinstance(vids, int)
@@ -56,7 +56,7 @@ def test_get_elements_from_video(TestResources, driver):
     _, video = TestResources
     driver.get(video.url)
     
-    url, title, date, owner = YtElementUtils.get_video_information(driver)
+    url, title, date, owner = Scraper.get_video_information(driver)
 
     assert video.title == title
     assert video.upload_date == str(date.date())
