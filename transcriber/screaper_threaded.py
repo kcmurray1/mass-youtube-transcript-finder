@@ -5,6 +5,7 @@ from transcriber.logger import Logger
 
 
 class ScraperThreaded:
+    """class of methods that use threading to accomplish tasks"""
     def get_transcripts(videos, author, log : Logger, transcript_op=None, num_workers=None):
         """Given a list of videos, find all videos of a specified author containing a desired phrase 
         Args:
