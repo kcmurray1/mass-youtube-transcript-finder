@@ -33,7 +33,7 @@ class ScraperWorker:
         
         # get transcript from url  
         transcript = DynamicPage.get_transcript(driver, ignore_desc_btn=True)
-        print("got trnasciprt")
+ 
       
         channel_id = db_logger.log_channel(uploader)
     
@@ -41,7 +41,6 @@ class ScraperWorker:
 
         db_logger.log_transcript(video_id, transcript_op(transcript))
 
-        print('done with log')
 
 
     def get_transcript_v2(self, video_queue : queue.Queue, video_handler, transcript_op=default_transcript):

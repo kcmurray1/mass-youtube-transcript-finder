@@ -74,7 +74,7 @@ class Scraper:
         return res
     
     def get_video_information(driver : webdriver):
-        print('getting video info')
+   
         upload_info = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'owner')))
 
 
@@ -100,7 +100,7 @@ class Scraper:
 
         uploader = upload_info.text.split('\n')[0]
 
-        print(url, title, "//", date.date(), uploader)
+        # print(url, title, "//", date.date(), uploader)
 
         return url, title, date, uploader
 

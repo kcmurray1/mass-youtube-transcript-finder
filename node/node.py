@@ -1,5 +1,4 @@
 import requests
-from transcriber.transcript import TranscriptProcessor
 from requests import exceptions
 from node.utils.hash import generate_hash
 import socket
