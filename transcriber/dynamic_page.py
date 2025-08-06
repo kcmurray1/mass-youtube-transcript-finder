@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 PAGELOADTIME = 10
-WAIT_TIME_TRANSCRIPT_LOAD = 20
+WAIT_TIME_TRANSCRIPT_LOAD = 10
 WAIT_TIME_BUTTON_LOAD = 10
 
 class DynamicPage:
@@ -31,6 +31,8 @@ class DynamicPage:
         # Scroll to the bottom for every additional 30 videos
         if video_count:
             num_bottom_scroll = ((video_count - 30) // 30)
+            if num_bottom_scroll < 0:
+                num_bottom_scroll = 1
             print(f"scrolling {num_bottom_scroll} times")
             for _ in range(num_bottom_scroll):
                 pyautogui.hotkey("ctrl", "end")

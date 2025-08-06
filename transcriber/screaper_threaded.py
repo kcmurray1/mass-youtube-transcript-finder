@@ -12,10 +12,11 @@ class ScraperThreaded:
             url: a youtube url for a channel homepage or playlist
             num_workers: int for the number of worker threads to run  
         """
-        if not num_workers or num_workers < 1 or num_workers > 8:
-            num_workers = 3
+        if not num_workers or num_workers < 1 or num_workers > 30:
+            num_workers = 4
 
         print(f"total videos: {len(videos)}")
+        print(videos)
 
         # NOTE: queue.Queue() is thread-safe
         video_queue = queue.Queue()
@@ -27,8 +28,13 @@ class ScraperThreaded:
 
         workers = []
         for i in range(num_workers):
-            new_worker = ScraperWorker(id=i, logger=log)
-            workers.append(threading.Thread(target=new_worker.get_transcript_v2, args=(video_queue, ScraperWorker.write_to_db, transcript_op)))
+            try:
+                new_worker = ScraperWorker(id=i, logger=log)
+                workers.append(threading.Thread(target=new_worker.get_transcript_v2, args=(video_queue, ScraperWorker.write_to_db, transcript_op)))
+            except Exception as e:
+                print(e)
+                pass
+            
         
         # Start threads
         for worker in workers:

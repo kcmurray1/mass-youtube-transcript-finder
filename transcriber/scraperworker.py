@@ -3,13 +3,16 @@ import queue
 from transcriber.scraper import Scraper
 from transcriber.dynamic_page import DynamicPage
 from transcriber.logger import Logger, DBLogger
+from mysql.connector.errors import PoolError
 
 class ScraperWorker:
     def __init__(self, id, logger : Logger):
         self.id = id
         driver_options = webdriver.ChromeOptions()
         driver_options.add_argument("mute-audio")
-        self.driver = webdriver.Chrome(options=driver_options)
+        driver_options.add_argument("--windows-size=1920,1080")
+        # driver_options.add_argument("--headless=new")
+        self.driver = webdriver.Remote(command_executor="http://127.0.0.1:4444", options=driver_options)
         self.logger = logger
 
     def default_transcript(transcript):
@@ -26,8 +29,12 @@ class ScraperWorker:
             if transcript is not None and transcript != []:
                 logger.log([video_url, '\n' ,transcript_op(transcript), '\n'])
     
-    def write_to_db(driver, video_url, db_logger, transcript_op):
-        driver.get(video_url)  
+    def write_to_db(driver : webdriver.Chrome, video_url, db_logger, transcript_op):
+        if db_logger.does_video_exist(video_url):
+            return
+                   
+        driver.get(video_url)
+
         home_channel_url, title, date, uploader = Scraper.get_video_information(driver)
     
         
@@ -55,16 +62,18 @@ class ScraperWorker:
             try:
                 # Try to get a video from the queue
                 video_url = video_queue.get_nowait()
-
+                print(video_queue.qsize())
                 # Perform operation on video_url and log it to desired source
                 video_handler(self.driver, video_url, self.logger, transcript_op)
-
+                
             # Restart work if an uncaught exception is thrown
             # or stop if the queue is empty
             except (Exception, queue.Empty) as e:
                 if isinstance(e, queue.Empty):
-
+                    print("queue empty!")
                     break
+                print(e)
+                    
                 continue
 
         # close driver

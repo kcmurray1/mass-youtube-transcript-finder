@@ -35,16 +35,30 @@ class DBLogger(Logger):
         cursor.close()
         conn.close()
         return channel_id 
+    
+    def does_video_exist(self, url):
+        conn = self.conn_pool.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT id FROM transcript_finder_app_video WHERE transcript_finder_app_video.url = '{url}'")
+        res = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        return res
 
     def log_video(self, channel_id, url, title, date):
         conn = self.conn_pool.get_connection()
         cursor = conn.cursor()
+       
+      
         query = "INSERT INTO transcript_finder_app_video(url, title, channel_id, date) VALUES (%s, %s, %s, %s)"
         if isinstance(channel_id, tuple):
             channel_id = channel_id[0]
         cursor.execute(query, (url, title, channel_id, date))
-      
+        
         conn.commit()
+        print("logged video", url)
+        
         cursor.close()
         conn.close()
         return cursor.lastrowid
