@@ -57,7 +57,7 @@ class DBLogger(Logger):
         cursor.execute(query, (url, title, channel_id, date))
         
         conn.commit()
-        print("logged video", url)
+        # print("logged video", url)
         
         cursor.close()
         conn.close()

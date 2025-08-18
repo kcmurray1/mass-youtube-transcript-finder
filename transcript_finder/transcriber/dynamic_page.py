@@ -1,5 +1,5 @@
 from selenium import webdriver
-from transcriber.utils.constants.paths import Paths
+from .utils.constants.paths import Paths
 import pyautogui
 import time
 from selenium import webdriver

@@ -1,4 +1,4 @@
-from transcriber.utils.constants.paths import Paths
+from .utils.constants.paths import Paths
 import time
 from datetime import datetime
 from selenium import webdriver
@@ -6,8 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 import re
-from transcriber.static_page import StaticPage
-from transcriber.dynamic_page import DynamicPage
+from .static_page import StaticPage
+from .dynamic_page import DynamicPage
 REGEX_DATE_STR = r'\w{3} \d+, \d{4}'
 
 PAGELOADTIME = 10
@@ -52,7 +52,8 @@ class Scraper:
 
             # NOTE: old way to find video element int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0])
             # No issues with it, but this information is included when retrieving the channel name
-            _, vid_count = StaticPage.get_channel_info(author, driver)
+            # _, vid_count = StaticPage.get_channel_info(author, driver)
+            vid_count = 1300
             print(f"rendering {vid_count}")
             DynamicPage.scroll_to_bottom(vid_count)
 

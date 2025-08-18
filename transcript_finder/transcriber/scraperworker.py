@@ -11,7 +11,7 @@ class ScraperWorker:
         driver_options = webdriver.ChromeOptions()
         driver_options.add_argument("mute-audio")
         driver_options.add_argument("--windows-size=1920,1080")
-        # driver_options.add_argument("--headless=new")
+        driver_options.add_argument("--headless=new")
         self.driver = webdriver.Remote(command_executor="http://127.0.0.1:4444", options=driver_options)
         self.logger = logger
 
@@ -45,8 +45,8 @@ class ScraperWorker:
         channel_id = db_logger.log_channel(uploader)
     
         video_id = db_logger.log_video(channel_id, video_url, title, date)
-
-        db_logger.log_transcript(video_id, transcript_op(transcript))
+        if not isinstance(transcript, Exception):
+            db_logger.log_transcript(video_id, transcript_op(transcript))
 
 
 
@@ -62,17 +62,16 @@ class ScraperWorker:
             try:
                 # Try to get a video from the queue
                 video_url = video_queue.get_nowait()
-                print(video_queue.qsize())
+                # print(video_queue.qsize())
                 # Perform operation on video_url and log it to desired source
                 video_handler(self.driver, video_url, self.logger, transcript_op)
                 
-            # Restart work if an uncaught exception is thrown
-            # or stop if the queue is empty
+            # stop if the queue is empty and skip over videos that with Exceptions thrown
             except (Exception, queue.Empty) as e:
                 if isinstance(e, queue.Empty):
                     print("queue empty!")
                     break
-                print(e)
+                print(f"Video error {video_url}:{e}")
                     
                 continue
 

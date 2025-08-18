@@ -9,10 +9,10 @@ Home
     <div class="col justify-content-center">
         <div class="row">
             <nav class="navbar bg-body-tertiary">
-            <form class="container-fluid">
+            <form action="/api/channel/search" method="get" class="container-fluid">
                 <div class="input-group input-group-lg">
                 <span class="input-group-text" id="basic-addon1">@</span>
-                <input type="text" class="form-control" placeholder="Channel" aria-label="Channel" aria-describedby="basic-addon1"/>
+                <input type="text" class="form-control" placeholder="Channel" aria-label="Channel" aria-describedby="basic-addon1" name="term"/>
                 </div>
             </form>
             </nav>

@@ -1,20 +1,20 @@
 from selenium import webdriver
 import requests
 
-from transcriber.scraper import Scraper
+from transcript_finder.transcriber.scraper import Scraper
 from dotenv import load_dotenv
 from mysql.connector import pooling
-from transcriber.screaper_threaded import ScraperThreaded
-from transcriber.logger import LocalLogger, DBLogger
+from transcript_finder.transcriber.screaper_threaded import ScraperThreaded
+from transcript_finder.transcriber.logger import LocalLogger, DBLogger
 import os
 def test_with_db_logger():
-    url = ''
+    url = 'https://www.youtube.com/@ScarleYonaguni/streams'
      
     
     main_driver = webdriver.Chrome()
-    videos = Scraper.find_videos(url, author='', driver=main_driver)
+    videos = Scraper.find_videos(url, author='ScarleYonaguni', driver=main_driver)
   
-    # main_driver.quit()
+    main_driver.quit()
 
     
 

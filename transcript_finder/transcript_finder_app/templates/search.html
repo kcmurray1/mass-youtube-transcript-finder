@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+search
+{% endblock %}
+{% block content %}
+
+{% for result in results %}
+{{ result}} <br>
+{% endfor %}
+
+{% endblock %}

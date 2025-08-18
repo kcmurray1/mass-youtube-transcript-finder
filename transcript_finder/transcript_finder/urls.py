@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, re_path, include
 # from transcript_finder_app.views import index
-from transcript_finder_app.web import index
+from transcript_finder_app.web import index, search
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,5 +26,6 @@ urlpatterns = [
         r'^api/',
         include('transcript_finder_app.urls')
     ),
-    path('', index)
+    path('', index),
+    path('search/', search)
 ]

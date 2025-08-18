@@ -1,7 +1,7 @@
 import queue
 import threading
-from transcriber.scraperworker import ScraperWorker
-from transcriber.logger import Logger
+from .scraperworker import ScraperWorker
+from .logger import Logger
 
 
 class ScraperThreaded:
@@ -15,8 +15,8 @@ class ScraperThreaded:
         if not num_workers or num_workers < 1 or num_workers > 30:
             num_workers = 4
 
-        print(f"total videos: {len(videos)}")
-        print(videos)
+        # print(f"total videos: {len(videos)}")
+        # print(videos)
 
         # NOTE: queue.Queue() is thread-safe
         video_queue = queue.Queue()
@@ -32,7 +32,7 @@ class ScraperThreaded:
                 new_worker = ScraperWorker(id=i, logger=log)
                 workers.append(threading.Thread(target=new_worker.get_transcript_v2, args=(video_queue, ScraperWorker.write_to_db, transcript_op)))
             except Exception as e:
-                print(e)
+                print(f"Failed to assign worker id:{i} {e}")
                 pass
             
         

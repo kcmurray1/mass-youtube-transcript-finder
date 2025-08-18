@@ -26,3 +26,7 @@
     - created web.py to handle frontend rendering, leaving views.py to handle API interaction
 - Create Home page that displays Channels and number of recorded videos
 - removed old Flask Node implementation
+
+##
+- add boilerplate page to fill in channel stats and search individual channel
+- refactor search logic in home page to
