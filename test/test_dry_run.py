@@ -1,8 +1,8 @@
 import pytest
-from transcriber.logger import LocalLogger, DBLogger
+# from transcriber.logger import LocalLogger, DBLogger
 from functools import partial
-from transcriber.screaper_threaded import ScraperThreaded
-from transcriber.scraper import Scraper
+# from transcriber.screaper_threaded import ScraperThreaded
+from transcript_finder.transcriber.scraper import Scraper
 import os
 from dotenv import load_dotenv
 from mysql.connector import pooling

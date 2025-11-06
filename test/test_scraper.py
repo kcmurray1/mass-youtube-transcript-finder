@@ -1,8 +1,7 @@
 import pytest
 from selenium import webdriver
-from transcriber.scraper import Scraper
-
-
+from transcript_finder.transcriber.scraper import Scraper
+"""TEsted 11/04/2025"""
 
 @pytest.fixture(scope='session')
 def driver():
@@ -24,14 +23,14 @@ def test_get_videos_from_homepage(driver):
 
     assert len(videos) == 45
 
-# def test_get_videos_from_playlist(driver):
+def test_get_videos_from_playlist(driver):
 
-#     playlist_url='https://www.youtube.com/watch?v=eX6g46aDLos&list=PL8K0QjCk8ZmigG5vw6ZizlZDvLEaAhNo4'
-#     channel = 'flarvain'
+    playlist_url='https://www.youtube.com/watch?v=eX6g46aDLos&list=PL8K0QjCk8ZmigG5vw6ZizlZDvLEaAhNo4'
+    channel = 'flarvain'
 
-#     videos = Scraper.find_videos(playlist_url, channel, driver)
+    videos = Scraper.find_videos(playlist_url, channel, driver)
 
-#     assert len(videos) == 13
+    assert len(videos) == 13
 
 # def test_get_transcript(driver):
 #     video_url = 'https://www.youtube.com/watch?v=Pi3bI-YghF0'

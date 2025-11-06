@@ -12,6 +12,7 @@ class Logger(ABC):
         pass
 
 class DBLogger(Logger):
+    """Connects to MYSQL database"""
     def __init__(self,connector : pooling.MySQLConnectionPool):
         self.conn_pool = connector
     
@@ -79,6 +80,7 @@ class DBLogger(Logger):
 
 
 class LocalLogger(Logger):
+    """Creates .txt files and appends data to them when logged"""
     def __init__(self, filepath, error_filepath, dir=None):
         self.write_lock = threading.Lock()
         self.err_lock = threading.Lock()

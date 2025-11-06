@@ -1,24 +1,25 @@
 from selenium import webdriver
 import queue
-from transcriber.scraper import Scraper
-from transcriber.dynamic_page import DynamicPage
-from transcriber.logger import Logger, DBLogger
+from .scraper import Scraper
+from .dynamic_page import DynamicPage
+from .logger import Logger, DBLogger
 from mysql.connector.errors import PoolError
 
 class ScraperWorker:
-    def __init__(self, id, logger : Logger):
+    def __init__(self, id, logger : Logger, remote_addr="127.0.0.1"):
         self.id = id
         driver_options = webdriver.ChromeOptions()
         driver_options.add_argument("mute-audio")
         driver_options.add_argument("--windows-size=1920,1080")
         driver_options.add_argument("--headless=new")
-        self.driver = webdriver.Remote(command_executor="http://127.0.0.1:4444", options=driver_options)
+        self.driver = webdriver.Remote(command_executor=f"http://{remote_addr}:4444", options=driver_options)
         self.logger = logger
 
     def default_transcript(transcript):
         return "\n".join([line.get_dom_attribute("aria-label") for line in transcript])
     
     def basic_video_handler(driver, video_url, logger : Logger, transcript_op):
+        """Unused"""
         driver.get(video_url)  
         # Get transcript
         transcript = Scraper.get_transcript(driver)

@@ -8,7 +8,7 @@ from transcript_finder.transcriber.screaper_threaded import ScraperThreaded
 from transcript_finder.transcriber.logger import LocalLogger, DBLogger
 import os
 def test_with_db_logger():
-    url = 'https://www.youtube.com/@ScarleYonaguni/streams'
+    url = ''
      
     
     main_driver = webdriver.Chrome()

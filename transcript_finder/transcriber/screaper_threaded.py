@@ -6,7 +6,7 @@ from .logger import Logger
 
 class ScraperThreaded:
     """class of methods that use threading to accomplish tasks"""
-    def get_transcripts(videos, author, log : Logger, transcript_op=None, num_workers=None):
+    def get_transcripts(videos, author, log : Logger, transcript_op=None, num_workers=None, hub_addr="127.0.0.1"):
         """Given a list of videos, find all videos of a specified author containing a desired phrase 
         Args:
             url: a youtube url for a channel homepage or playlist
@@ -29,7 +29,7 @@ class ScraperThreaded:
         workers = []
         for i in range(num_workers):
             try:
-                new_worker = ScraperWorker(id=i, logger=log)
+                new_worker = ScraperWorker(id=i, logger=log, remote_addr=hub_addr)
                 workers.append(threading.Thread(target=new_worker.get_transcript_v2, args=(video_queue, ScraperWorker.write_to_db, transcript_op)))
             except Exception as e:
                 print(f"Failed to assign worker id:{i} {e}")

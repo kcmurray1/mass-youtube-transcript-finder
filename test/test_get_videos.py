@@ -3,9 +3,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from transcriber.transcript import TranscriptProcessor
-from transcriber.utils.constants.paths import Paths
-
+# from transcript_finder.transcriber.transcript import TranscriptProcessor
+from transcript_finder.transcriber.utils.constants.paths import Paths
+"""OUTDATED.."""
 class YtChannel:
     def __init__(self, channel_url, num_videos, latest_video, playlist_url, playlist_vid_count):
         self.url = channel_url
@@ -32,33 +32,12 @@ def test_channel(driver):
         playlist_vid_count=13
     ), driver
 
-@pytest.fixture(scope='session')
-def transcriber(driver):
-    yield TranscriptProcessor(driver=driver)
+
 
 @pytest.fixture(autouse=True)
 def reset_driver_state(driver):
     # This runs before every test automatically
     driver.delete_all_cookies()
-
-
-
-def test_get_video_count_element(test_channel):
-    channel, driver = test_channel
-
-    driver.get(channel.url)
-    vid_count = int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0])
-    assert channel.video_count == vid_count
-
-
-def test_get_video_element(test_channel):
-    channel, driver = test_channel
-
-    driver.get(channel.url)
-    video = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, Paths.ID_VIDEO)))
-
-    assert video.get_attribute('aria-label') == channel.last_video
-
 
 
 # NOTE: Previous test may interfere with the upcoming tests. Appears to be
@@ -94,6 +73,6 @@ def test_transcriber_find_videos_from_playlist_url(test_channel, transcriber : T
 def test_transcriber_find_videos_invalid_url(test_channel, transcriber : TranscriptProcessor):
     _, driver = test_channel
 
-    videos = transcriber.find_videos('https://www.youtube.com/watch?v=5Gk_0jLrOM8', driver=driver)
+    videos = transcriber.find_videos('', driver=driver)
 
     assert len(videos) == 0

@@ -52,8 +52,8 @@ class Scraper:
 
             # NOTE: old way to find video element int(driver.find_element(By.XPATH, Paths.XPATH_VIDEO_COUNT).text.split()[0])
             # No issues with it, but this information is included when retrieving the channel name
-            # _, vid_count = StaticPage.get_channel_info(author, driver)
-            vid_count = 1300
+            _, vid_count = StaticPage.get_channel_info(author, driver)
+            
             print(f"rendering {vid_count}")
             DynamicPage.scroll_to_bottom(vid_count)
 

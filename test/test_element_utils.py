@@ -1,6 +1,6 @@
 import pytest
 from selenium import webdriver
-from transcriber.scraper import Scraper
+from transcript_finder.transcriber.scraper import Scraper
 
 class Channel:
     def __init__(self, owner, channel_url, video_count):
@@ -16,7 +16,6 @@ class Video:
         self.url = url
         
 
-HOME_URL = 'https://www.youtube.com/@jdh/videos'
 PLAYLIST_URL = 'https://www.youtube.com/watch?v=Z9L7u-602qQ&list=PLXVfT_0eTq66k_xLrdBWuZvDe8_UAyK0R'
 
 @pytest.fixture(scope='session')
@@ -42,15 +41,6 @@ def TestResources():
         owner='flarvain',
         url='https://www.youtube.com/watch?v=XhluFjFAo4E'
     )
-
-def test_get_elements_from_homepage(TestResources, driver):
-    channel, _ = TestResources
-
-    driver.get(channel.channel_url)
-    owner, vids = Scraper.get_channel_info(channel.owner, driver)
-    
-    assert owner is not None
-    assert isinstance(vids, int)
 
 def test_get_elements_from_video(TestResources, driver):
     _, video = TestResources

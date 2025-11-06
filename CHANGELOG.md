@@ -27,6 +27,7 @@
 - Create Home page that displays Channels and number of recorded videos
 - removed old Flask Node implementation
 
-##
-- add boilerplate page to fill in channel stats and search individual channel
-- refactor search logic in home page to
+## 8/8/2025
+- Added search bar to homepage that returns videos from all channels whose transcript contains search item
+- Moved transcriber logic inside Django project folder to handle import issues
+- Start working on creating method to commence webscraping from frontend
