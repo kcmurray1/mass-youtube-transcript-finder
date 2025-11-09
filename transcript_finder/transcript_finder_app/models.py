@@ -8,8 +8,8 @@ class Channel(models.Model):
         return f"{self.name}"
 
 class Video(models.Model):
-    url = models.CharField(max_length=100, unique=True)
-    title = models.CharField(max_length=100)
+    url = models.CharField(max_length=250, unique=True)
+    title = models.CharField(max_length=250)
     date = models.DateField(null=True)
     channel = models.ForeignKey(
         Channel,

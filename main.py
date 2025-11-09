@@ -12,20 +12,14 @@ def test_with_db_logger():
      
     
     main_driver = webdriver.Chrome()
-    videos = Scraper.find_videos(url, author='ScarleYonaguni', driver=main_driver)
-  
+    videos = Scraper.find_videos(url, author='', driver=main_driver)
+    
+    print(len(videos))
+    
     main_driver.quit()
 
-    
-
-    res = requests.get(f"http://localhost:4444/status")
-    x = res.json()
-
-    num_workers = 0
-
-    for node in x["value"]["nodes"]:
-        print(f"max sessions {node["maxSessions"]}")
-        num_workers += node["maxSessions"]
+   
+    num_workers=12 
 
 
     def default_transcript(transcript):
@@ -34,10 +28,10 @@ def test_with_db_logger():
   
     load_dotenv()
     dbconfig = {
-        'database' : os.getenv('DEV_DB'),
-            'user': os.getenv('USER'),
-            'password': os.getenv('MYSQL_PASSWORD'),
-            'host' :'localhost'
+        'database' : os.getenv('DB_NAME'),
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'host' : os.getenv('DB_HOST', 'localhost')
     }
     conn_pool = pooling.MySQLConnectionPool(
         pool_size=32,
@@ -46,8 +40,7 @@ def test_with_db_logger():
 
     )
     db = DBLogger(conn_pool)
-
-    ScraperThreaded.get_transcripts(videos=videos, author='', log=db, transcript_op=default_transcript, num_workers=num_workers)
+    ScraperThreaded.get_transcripts(videos=videos, author='', log=db, transcript_op=default_transcript, num_workers=num_workers, hub_addr='')
 
 
 

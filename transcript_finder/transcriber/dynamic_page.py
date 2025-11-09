@@ -1,6 +1,6 @@
 from selenium import webdriver
 from .utils.constants.paths import Paths
-import pyautogui
+from selenium.webdriver.common.keys import Keys
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -14,7 +14,7 @@ WAIT_TIME_BUTTON_LOAD = 10
 class DynamicPage:
     """Class of methods that logic on dynamic html element(clicking, scrolling, etc)"""
 
-    def scroll_to_bottom(video_count: int):
+    def scroll_to_bottom(video_count: int, driver : webdriver):
         """Scroll to the bottom of a webpage based on the video_count
         Args:
             video_count: an int descripting 
@@ -25,7 +25,8 @@ class DynamicPage:
 
         # Perform one scroll to the bottom of the webpage to handle
         # A bug where prescence of video elements are obscured by Chrome pop-ups
-        pyautogui.hotkey("ctrl", "end")
+        # pyautogui.hotkey("ctrl", "end")
+        webdriver.ActionChains(driver).key_down(Keys.CONTROL).key_down(Keys.END).key_up(Keys.CONTROL).key_up(Keys.END).perform()
         time.sleep(3)
 
         # Scroll to the bottom for every additional 30 videos
@@ -35,7 +36,9 @@ class DynamicPage:
                 num_bottom_scroll = 1
             print(f"scrolling {num_bottom_scroll} times")
             for _ in range(num_bottom_scroll):
-                pyautogui.hotkey("ctrl", "end")
+                # pyautogui.hotkey("ctrl", "end")
+                
+                webdriver.ActionChains(driver).key_down(Keys.CONTROL).key_down(Keys.END).key_up(Keys.CONTROL).key_up(Keys.END).perform()
                 time.sleep(3)
         else:
             print("no video_count: ", video_count, flush=True)

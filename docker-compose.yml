@@ -9,7 +9,7 @@ services:
     environment:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_NODE_OVERRIDE_MAX_SESSIONS=true
-      - SE_NODE_MAX_SESSIONS=4
+      - SE_NODE_MAX_SESSIONS=8
   
   selenium-hub:
     image: selenium/hub:4.34.0-20250707

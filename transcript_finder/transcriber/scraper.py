@@ -55,12 +55,13 @@ class Scraper:
             _, vid_count = StaticPage.get_channel_info(author, driver)
             
             print(f"rendering {vid_count}")
-            DynamicPage.scroll_to_bottom(vid_count)
+            DynamicPage.scroll_to_bottom(vid_count, driver)
 
             # NOTE: homepage videos can all be found using ID 'video-title-link' 01/02/24
             videos = driver.find_elements(By.ID, Paths.ID_VIDEO) 
 
-        except:
+        except Exception as e:
+            print(e)
             try:
                 # Find all playlist videos
                 print("finding videos by playlist method...")
