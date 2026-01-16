@@ -93,9 +93,6 @@ class Scraper:
         title = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'above-the-fold')))
         title = title.find_element(By.ID, "title").text
         
-
-
-        
         date = re.search(REGEX_DATE_STR, upload_date.strip())
 
         date = datetime.strptime(date.group(),"%b %d, %Y")

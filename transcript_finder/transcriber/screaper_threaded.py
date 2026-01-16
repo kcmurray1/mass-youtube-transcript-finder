@@ -35,7 +35,6 @@ class ScraperThreaded:
                 print(f"Failed to assign worker id:{i} {e}")
                 pass
             
-        
         # Start threads
         for worker in workers:
             worker.start()

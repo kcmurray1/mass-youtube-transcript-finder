@@ -1,5 +1,5 @@
 
-class Paths:
+class ElementPaths:
     """Paths to elements used by Selenium"""
     XPATH_VIDEO_COUNT = "//yt-content-metadata-view-model//span[contains(text(), 'video')]"
     # XPATH_VIDEO_COUNT = "/html[1]/body[1]/ytd-app[1]/div[1]/ytd-page-manager[1]/ytd-browse[1]/div[3]/ytd-tabbed-page-header[1]/tp-yt-app-header-layout[1]/div[1]/tp-yt-app-header[1]/div[2]/div[1]/div[2]/yt-page-header-renderer[1]/yt-page-header-view-model[1]/div[1]/div[1]/div[1]/yt-content-metadata-view-model[1]/div[2]/span[3]/span[1]"

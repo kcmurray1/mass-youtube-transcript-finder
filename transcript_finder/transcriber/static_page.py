@@ -6,7 +6,7 @@ import re
 
 REGEX_DATE_STR = r'\w{3} \d+, \d{4}'
 
-REGEX_VIDEO_COUNT_STR = r'\d+.\d+'
+REGEX_VIDEO_COUNT_STR = r'\d+(.\d+)?'
 
 class StaticPage:
     """Class of methods that perform logic based on static html of webpage"""
@@ -19,8 +19,14 @@ class StaticPage:
             vids = int(video_string)
         except ValueError as e:
             vids = re.search(REGEX_VIDEO_COUNT_STR, video_string)
-            thousands, hundreds = vids.group().split('.')
-            vids = (int(thousands) * 1000) + (int(hundreds) * 100)
+            vid_count = vids.group().split('.')
+
+            if len(vid_count) == 2: 
+                thousands, hundreds = vid_count
+                vids = (int(thousands) * 1000) + (int(hundreds) * 100)
+            else:
+                thousands, = vid_count
+                vids = int(thousands) * 1000
         return vids
 
     def get_channel_info(user_entered_owner, driver):
@@ -34,7 +40,7 @@ class StaticPage:
         vids = StaticPage._handle_video_count(x[-1].split(' ')[0])
 
       
-        print('found', owner, 'videos', vids)
+        print('channel info found', owner, 'videos', vids)
         if user_entered_owner.lower() in owner:
             return owner, vids
         return None, None

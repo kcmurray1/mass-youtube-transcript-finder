@@ -1,7 +1,7 @@
 import pytest
 from selenium import webdriver
 from transcript_finder.transcriber.static_page import StaticPage
-"""Last tested 11/4/25"""
+"""Last tested 1/11/26"""
 class Channel:
     def __init__(self, owner, channel_url, video_count):
         self.owner = owner
@@ -41,7 +41,7 @@ def TestResources():
     thousand_videos = Channel(
         owner='',
         channel_url='',
-        video_count=1400
+        video_count=1500
     )
     yield {"basic" : basic, "thousands": thousand_videos}
 

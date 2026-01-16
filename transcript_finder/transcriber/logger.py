@@ -29,6 +29,7 @@ class DBLogger(Logger):
         cursor.execute(f"SELECT id FROM transcript_finder_app_channel WHERE transcript_finder_app_channel.name = '{channel_name}'")
         channel_id = cursor.fetchone()
         if not channel_id:
+            print("adding channel...", channel_name)
             cursor.execute(f"INSERT INTO transcript_finder_app_channel(name) VALUES ('{channel_name}')")
             channel_id = cursor.lastrowid
             conn.commit()
