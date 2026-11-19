@@ -36,7 +36,7 @@ def debug_transcript():
     """
     })
 
-    url = 'https://www.youtube.com/watch?v=Zyw78NvHdRQ'
+    url = ''
     driver.get(url)
     
     from selenium.webdriver.common.by import By
@@ -76,14 +76,14 @@ def debug_transcript():
     
 
 
-def test_with_db_logger(videos, num_workers, addr):
-    #url = ''
+def test_with_db_logger(videos=None, num_workers=5, addr='localhost'):
+    # url = ''
      
 
     # main_driver = webdriver.Chrome()
     # videos = Scraper.find_videos(url, author='', driver=main_driver)
     
-    print(videos)
+    # print(len(videos), videos)
     
     # main_driver.quit()
 
@@ -114,7 +114,7 @@ def test_with_db_logger(videos, num_workers, addr):
 
 def get_vids(url):
     main_driver = webdriver.Chrome()
-    videos = Scraper.find_videos(url, author='MercyModiste', driver=main_driver)
+    videos = Scraper.find_videos(url, author='', driver=main_driver)
     
     
     
@@ -123,12 +123,13 @@ def get_vids(url):
     return videos
 
 if __name__ == "__main__":
-    debug_transcript()
-
+    # debug_transcript()
+  
     import os
 
-   
+    from ramble import VIDEOSV6
     # test_with_db_logger(VIDEOSV2, 9, hub_addr)
+    test_with_db_logger(videos=VIDEOSV6, num_workers=10, addr='10.0.0.114')
 
     # print(len(all_videos))
 

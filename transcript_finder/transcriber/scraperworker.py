@@ -50,9 +50,9 @@ class ScraperWorker:
                 logger.log([video_url, '\n' ,transcript_op(transcript), '\n'])
     
     def write_to_db(driver : webdriver.Chrome, video_url, db_logger, transcript_op):
-        # if db_logger.does_video_exist(video_url):
-        #     print("video already exists")
-        #     return
+        if db_logger.does_video_exist(video_url):
+            print("video already exists")
+            return
                    
         driver.get(video_url)
 
@@ -60,7 +60,7 @@ class ScraperWorker:
     
         
         # get transcript from url  
-        transcript = DynamicPage.get_transcript(driver, ignore_desc_btn=True)
+        transcript = DynamicPage.get_transcript(driver)
  
         # log the information     
         channel_id = db_logger.log_channel(uploader)
